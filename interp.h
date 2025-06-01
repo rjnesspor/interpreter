@@ -1,6 +1,12 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <stdbool.h>
+
 #define MAX_VARIABLES 20
 
 typedef union {
@@ -23,5 +29,6 @@ typedef struct {
 Variable* getVariable(char* name);
 void addVariable(Variable var);
 void printVariable(Variable* var);
-
+void printVariables();
+bool isInt(const char* str);
 #endif

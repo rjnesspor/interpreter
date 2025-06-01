@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "interp.h"
 
 VariableTable vars;
@@ -46,8 +43,14 @@ int main(int argc, char* argv[]) {
             char* varType = tokens[1];
             char* varName = tokens[2];
 
+            Variable* v = getVariable(varName);
+            if (v) {
+                fprintf(stderr, "ERROR: (%s:%d) '%s' has already been defined.\n", argv[1], lineNumber, varName);
+                exit(1);
+            }
+
             Variable var;
-            strncpy(var.name, varName, strlen(varName));
+            strncpy(var.name, varName, strlen(varName) + 1);
 
             if (strcmp(tokens[3], "as") != 0) {
                 fprintf(stderr, "ERROR: (%s:%d) Expected 'as' to complete variable initialization, but got '%s'.\n", argv[1], lineNumber, tokens[3]);
@@ -133,8 +136,90 @@ int main(int argc, char* argv[]) {
 
         } else {
 
-            fprintf(stderr, "ERROR: (%s:%d) Unrecognized directive '%s'.\n", argv[1], lineNumber, command);
-            exit(1);
+            // Check if we are trying to reassign a variable value
+            Variable* varToChange = getVariable(command);
+            if (varToChange) {            
+
+                if (strcmp(tokens[1], "is") != 0) {
+                    fprintf(stderr, "ERROR: (%s:%d) Expected 'is' to complete variable reassignment, but got '%s'.\n",  argv[1], lineNumber, tokens[1]);
+                    exit(1);
+                }
+
+                // Math functions
+                // x is x + 3
+                // x is 5 + 5
+                // x is 3 + x
+                if (tokenCount == 5) {
+
+                    char operator = tokens[3][0];
+
+                    int arg1;
+                    int arg2;
+                    
+                    // Parse arg1
+                    if (isInt(tokens[2])) {
+                        arg1 = atoi(tokens[2]);
+                    } else {
+                        Variable* v1 = getVariable(tokens[2]);
+                        if (v1) {
+                            if (v1->type == 0) {
+                                arg1 = v1->value.intValue;
+                            } else {
+                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", argv[1], lineNumber, v1->name);
+                                exit(1);
+                            }
+                        } else {
+                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", argv[1], lineNumber, tokens[2]);
+                            exit(1);
+                        }
+                    }
+
+                    // Parse arg2
+                    if (isInt(tokens[4])) {
+                        arg2 = atoi(tokens[4]);
+                    } else {
+                        Variable* v2 = getVariable(tokens[4]);
+                        if (v2) {
+                            if (v2->type == 0) {
+                                arg2 = v2->value.intValue;
+                            } else {
+                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", argv[1], lineNumber, v2->name);
+                                exit(1);
+                            }
+                        } else {
+                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", argv[1], lineNumber, tokens[4]);
+                            exit(1);
+                        }
+                    }
+
+                    int res;
+
+                    if (operator == '+') {
+                        res = arg1 + arg2;
+                    } else if (operator == '-') {
+                        res = arg1 - arg2;
+                    } else if (operator == '*') {
+                        res = arg1 * arg2;
+                    } else if (operator == '/') {
+                        res = arg1 / arg2;
+                    } else {
+                        fprintf(stderr, "ERROR: (%s:%d) Unrecognized arithmetic operator '%c'.\n", argv[1], lineNumber, operator);
+                        exit(1);
+                    }
+
+                    varToChange->value.intValue = res;
+
+                } 
+                // Reassignment
+                // x is 5
+                else if (tokenCount == 3) {
+
+                    // TODO: check if an actual valid number is given 
+                    varToChange->value.intValue = atoi(tokens[2]);
+
+                }
+
+            }
 
         }
 
@@ -183,4 +268,20 @@ void printVariable(Variable* var) {
         }
     }
 
+}
+
+void printVariables() {
+    for (int i = 0; i < vars.count; i++) {
+        printVariable(&vars.variables[i]);
+    }
+}
+
+bool isInt(const char* str) {
+    if (*str == '-' || *str == '+') str++;
+    if (*str == '\0') return false; // empty
+    while (*str) {
+        if (!isdigit(*str)) return false;
+        str++;
+    }
+    return true;
 }
