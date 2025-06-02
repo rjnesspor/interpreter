@@ -1,6 +1,7 @@
 #include "interp.h"
 
 VariableTable vars;
+char* fileName;
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -13,18 +14,49 @@ int main(int argc, char* argv[]) {
         perror("Error opening file.");
         return 1;
     }
+    fileName = argv[1];
 
     // We can hold a maximum of MAX_VARIABLES variables in the program memory
     vars.variables = malloc(sizeof(Variable) * MAX_VARIABLES);
 
     char line[256];
     int lineNumber = 1;
+    
+    // Flags
+    bool executionEnabled = true;
+
     while (fgets(line, sizeof(line), file) != NULL) {
 
         // Remove newline character
         if (line[strlen(line) - 1] == '\n') {
             line[strlen(line) - 1] = '\0';
         }
+
+        // Reached the end of our if statement, we can continue executing after this line.
+        if (strcmp(line, "endif") == 0) {
+            executionEnabled = true;
+            continue;
+        }
+
+        // Skip this line if we are skipping an if statement.
+        if (!executionEnabled) {
+            continue;
+        }
+
+        process(line, lineNumber, &executionEnabled);
+
+        lineNumber++;
+
+    }
+
+    puts("\nReached the end of the program.\n");
+
+    free(vars.variables);
+    fclose(file);
+
+}
+
+void process(char* line, int lineNumber, bool* executionEnabled) {
 
         // Tokenize line by " "
         char* tokens[256];
@@ -45,7 +77,7 @@ int main(int argc, char* argv[]) {
 
             Variable* v = getVariable(varName);
             if (v) {
-                fprintf(stderr, "ERROR: (%s:%d) '%s' has already been defined.\n", argv[1], lineNumber, varName);
+                fprintf(stderr, "ERROR: (%s:%d) '%s' has already been defined.\n", fileName, lineNumber, varName);
                 exit(1);
             }
 
@@ -53,7 +85,7 @@ int main(int argc, char* argv[]) {
             strncpy(var.name, varName, strlen(varName) + 1);
 
             if (strcmp(tokens[3], "as") != 0) {
-                fprintf(stderr, "ERROR: (%s:%d) Expected 'as' to complete variable initialization, but got '%s'.\n", argv[1], lineNumber, tokens[3]);
+                fprintf(stderr, "ERROR: (%s:%d) Expected 'as' to complete variable initialization, but got '%s'.\n", fileName, lineNumber, tokens[3]);
                 exit(1);
             }
 
@@ -85,20 +117,22 @@ int main(int argc, char* argv[]) {
                 int index = 0;
                 
                 for (int i = 0; i < strTokens; i++) {
-                    for (int j = 0; j < strlen(str[i]); j++) {
-                        finalString[index++] = str[i][j];
-                        if (j + 1 == strlen(str[i])) {
-                            finalString[index++] = ' ';
-                        }
+                    int wordLen = strlen(str[i]);
+                    memcpy(&finalString[index], str[i], wordLen);
+                    index += wordLen;
+                    if (i < strTokens - 1) {
+                        finalString[index++] = ' ';
                     }
                 }
+
+                finalString[index] = '\0';
 
                 strncpy(var.value.stringValue, finalString, length);
                 free(finalString);
                 addVariable(var);
 
             } else {
-                fprintf(stderr, "ERROR: (%s:%d) '%s' did not match any valid variable types.\n", argv[1], lineNumber, varType);
+                fprintf(stderr, "ERROR: (%s:%d) '%s' did not match any valid variable types.\n", fileName, lineNumber, varType);
                 exit(1);
             }
 
@@ -129,11 +163,75 @@ int main(int argc, char* argv[]) {
 
             } else {
 
-                fprintf(stderr, "ERROR: (%s:%d) '%s' did not match any valid exit statuses.\n",  argv[1], lineNumber, status);
+                fprintf(stderr, "ERROR: (%s:%d) '%s' did not match any valid exit statuses.\n", fileName, lineNumber, status);
                 exit(1);
 
             }
 
+        } 
+        // If statement
+        // if x = 5
+        // if y > 2
+        else if (strcmp(command, "if") == 0) {
+            
+            char operator = tokens[2][0];
+            
+            int arg1;
+            int arg2;
+
+            // Parse arg1
+            if (isInt(tokens[1])) {
+                arg1 = atoi(tokens[1]);
+            } else {
+                Variable* v1 = getVariable(tokens[1]);
+                if (v1) {
+                    if (v1->type == 0) {
+                        arg1 = v1->value.intValue;
+                    } else {
+                        fprintf(stderr, "ERROR: (%s:%d) Cannot perform comparison on '%s' since it is of type STRING.\n", fileName, lineNumber, v1->name);
+                        exit(1);
+                    }
+                } else {
+                    fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, tokens[1]);
+                    exit(1);
+                }
+            }
+
+            // Parse arg2
+            if (isInt(tokens[3])) {
+                arg2 = atoi(tokens[3]);
+            } else {
+                Variable* v2 = getVariable(tokens[3]);
+                if (v2) {
+                    if (v2->type == 0) {
+                        arg2 = v2->value.intValue;
+                    } else {
+                        fprintf(stderr, "ERROR: (%s:%d) Cannot perform comparison on '%s' since it is of type STRING.\n", fileName, lineNumber, v2->name);
+                        exit(1);
+                    }
+                } else {
+                    fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, tokens[3]);
+                    exit(1);
+                }
+            }
+
+            if (operator == '=') {
+                if (arg1 != arg2) {
+                    *executionEnabled = false;
+                }
+            } else if (operator == '>') {
+                if (arg1 <= arg2) {
+                    *executionEnabled = false;
+                }
+            } else if (operator == '<') {
+                if (arg1 >= arg2) {
+                    *executionEnabled = false;
+                }
+            } else {
+                fprintf(stderr, "ERROR: (%s:%d) Unrecognized comparison operator '%c'.\n", fileName, lineNumber, operator);
+                exit(1);
+            }
+            
         } else {
 
             // Check if we are trying to reassign a variable value
@@ -141,7 +239,7 @@ int main(int argc, char* argv[]) {
             if (varToChange) {            
 
                 if (strcmp(tokens[1], "is") != 0) {
-                    fprintf(stderr, "ERROR: (%s:%d) Expected 'is' to complete variable reassignment, but got '%s'.\n",  argv[1], lineNumber, tokens[1]);
+                    fprintf(stderr, "ERROR: (%s:%d) Expected 'is' to complete variable reassignment, but got '%s'.\n", fileName, lineNumber, tokens[1]);
                     exit(1);
                 }
 
@@ -165,11 +263,11 @@ int main(int argc, char* argv[]) {
                             if (v1->type == 0) {
                                 arg1 = v1->value.intValue;
                             } else {
-                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", argv[1], lineNumber, v1->name);
+                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", fileName, lineNumber, v1->name);
                                 exit(1);
                             }
                         } else {
-                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", argv[1], lineNumber, tokens[2]);
+                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, tokens[2]);
                             exit(1);
                         }
                     }
@@ -183,11 +281,11 @@ int main(int argc, char* argv[]) {
                             if (v2->type == 0) {
                                 arg2 = v2->value.intValue;
                             } else {
-                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", argv[1], lineNumber, v2->name);
+                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", fileName, lineNumber, v2->name);
                                 exit(1);
                             }
                         } else {
-                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", argv[1], lineNumber, tokens[4]);
+                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, tokens[4]);
                             exit(1);
                         }
                     }
@@ -203,7 +301,7 @@ int main(int argc, char* argv[]) {
                     } else if (operator == '/') {
                         res = arg1 / arg2;
                     } else {
-                        fprintf(stderr, "ERROR: (%s:%d) Unrecognized arithmetic operator '%c'.\n", argv[1], lineNumber, operator);
+                        fprintf(stderr, "ERROR: (%s:%d) Unrecognized arithmetic operator '%c'.\n", fileName, lineNumber, operator);
                         exit(1);
                     }
 
@@ -222,15 +320,6 @@ int main(int argc, char* argv[]) {
             }
 
         }
-
-        lineNumber++;
-
-    }
-
-    puts("\nReached the end of the program.\n");
-
-    free(vars.variables);
-    fclose(file);
 
 }
 

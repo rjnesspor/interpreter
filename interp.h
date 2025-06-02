@@ -31,4 +31,5 @@ void addVariable(Variable var);
 void printVariable(Variable* var);
 void printVariables();
 bool isInt(const char* str);
+void process(char* line, int lineNumber, bool* executionEnabled);
 #endif
