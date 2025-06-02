@@ -2,6 +2,8 @@
 
 This program interprets a custom made language. The interpreter currently performs basic syntax/semantic checking but mostly assumes the input file is valid.
 
+There is also an [assembler](https://github.com/rjnesspor/assembler) available for this language but doesn't currently support many directives.
+
 Acceptable Directives 
 -
 
