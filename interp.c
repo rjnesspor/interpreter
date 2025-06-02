@@ -1,4 +1,5 @@
 #include "interp.h"
+#include "utils.h"
 
 VariableTable vars;
 char* fileName;
@@ -43,13 +44,18 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
+        // If this line is empty, skip it.
+        if (strlen(line) == 0) {
+            continue;
+        }
+
         process(line, lineNumber, &executionEnabled);
 
         lineNumber++;
 
     }
 
-    puts("\nReached the end of the program.\n");
+    puts("\nProgram exited (Dropped off bottom).\n");
 
     free(vars.variables);
     fclose(file);
@@ -106,28 +112,9 @@ void process(char* line, int lineNumber, bool* executionEnabled) {
                 int strTokens = tokenCount - 4;
                 char** str = (tokens + 4);
 
-                int length = 0;
-                for (int i = 0; i < strTokens; i++) {
-                    length += strlen(str[i]);
-                }
-                length += (strTokens - 1); // Add spaces
-                length++; // Add null terminator
+                char* finalString = strConcat(str, strTokens);
 
-                char* finalString = malloc(length * sizeof(char));
-                int index = 0;
-                
-                for (int i = 0; i < strTokens; i++) {
-                    int wordLen = strlen(str[i]);
-                    memcpy(&finalString[index], str[i], wordLen);
-                    index += wordLen;
-                    if (i < strTokens - 1) {
-                        finalString[index++] = ' ';
-                    }
-                }
-
-                finalString[index] = '\0';
-
-                strncpy(var.value.stringValue, finalString, length);
+                strncpy(var.value.stringValue, finalString, strlen(finalString) + 1);
                 free(finalString);
                 addVariable(var);
 
@@ -232,92 +219,62 @@ void process(char* line, int lineNumber, bool* executionEnabled) {
                 exit(1);
             }
             
-        } else {
+        }
+        // redefine x as integer 5
+        // redefine y as string hello, world!
+        // redefine z as x + y
+        else if (strcmp(command, "redefine") == 0) {
 
-            // Check if we are trying to reassign a variable value
-            Variable* varToChange = getVariable(command);
-            if (varToChange) {            
+            Variable* varToChange = getVariable(tokens[1]);
 
-                if (strcmp(tokens[1], "is") != 0) {
-                    fprintf(stderr, "ERROR: (%s:%d) Expected 'is' to complete variable reassignment, but got '%s'.\n", fileName, lineNumber, tokens[1]);
+            if (varToChange) {
+
+                if (strcmp(tokens[2], "as") != 0) {
+                    fprintf(stderr, "ERROR: (%s:%d) Expected 'as' to complete variable reassignment, but got '%s'.\n", fileName, lineNumber, tokens[2]);
                     exit(1);
                 }
 
-                // Math functions
-                // x is x + 3
-                // x is 5 + 5
-                // x is 3 + x
-                if (tokenCount == 5) {
+                if (strcmp(tokens[3], "integer") == 0) {
 
-                    char operator = tokens[3][0];
-
-                    int arg1;
-                    int arg2;
-                    
-                    // Parse arg1
-                    if (isInt(tokens[2])) {
-                        arg1 = atoi(tokens[2]);
-                    } else {
-                        Variable* v1 = getVariable(tokens[2]);
-                        if (v1) {
-                            if (v1->type == 0) {
-                                arg1 = v1->value.intValue;
-                            } else {
-                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", fileName, lineNumber, v1->name);
-                                exit(1);
-                            }
-                        } else {
-                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, tokens[2]);
-                            exit(1);
-                        }
-                    }
-
-                    // Parse arg2
                     if (isInt(tokens[4])) {
-                        arg2 = atoi(tokens[4]);
-                    } else {
-                        Variable* v2 = getVariable(tokens[4]);
-                        if (v2) {
-                            if (v2->type == 0) {
-                                arg2 = v2->value.intValue;
-                            } else {
-                                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", fileName, lineNumber, v2->name);
-                                exit(1);
-                            }
-                        } else {
-                            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, tokens[4]);
-                            exit(1);
-                        }
+
+                        varToChange->type = 0;
+                        varToChange->value.intValue = atoi(tokens[4]);
+
                     }
 
-                    int res;
+                } else if (strcmp(tokens[3], "string") == 0) {
 
-                    if (operator == '+') {
-                        res = arg1 + arg2;
-                    } else if (operator == '-') {
-                        res = arg1 - arg2;
-                    } else if (operator == '*') {
-                        res = arg1 * arg2;
-                    } else if (operator == '/') {
-                        res = arg1 / arg2;
-                    } else {
-                        fprintf(stderr, "ERROR: (%s:%d) Unrecognized arithmetic operator '%c'.\n", fileName, lineNumber, operator);
-                        exit(1);
-                    }
+                    char** array = (tokens + 4);
+                    int arrayLength = tokenCount - 4;
 
-                    varToChange->value.intValue = res;
+                    char* finalString = strConcat(array, arrayLength);
 
-                } 
-                // Reassignment
-                // x is 5
-                else if (tokenCount == 3) {
+                    varToChange->type = 1;
+                    strncpy(varToChange->value.stringValue, finalString, strlen(finalString) + 1);
+                    free(finalString);
 
-                    // TODO: check if an actual valid number is given 
-                    varToChange->value.intValue = atoi(tokens[2]);
+                } else {
+                    // Check if we are trying to do math
+
+                    int result = parseIntegerMath(tokens[3], tokens[5], tokens[4][0], lineNumber);
+                    
+                    varToChange->type = 0;
+                    varToChange->value.intValue = result;
 
                 }
 
+            } else {
+                fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, tokens[1]);
+                exit(1);
             }
+
+        } 
+        
+        else {
+
+            fprintf(stderr, "ERROR: (%s:%d) Unrecognized directive '%s'.\n", fileName, lineNumber, command);
+            exit(1);
 
         }
 
@@ -365,12 +322,61 @@ void printVariables() {
     }
 }
 
-bool isInt(const char* str) {
-    if (*str == '-' || *str == '+') str++;
-    if (*str == '\0') return false; // empty
-    while (*str) {
-        if (!isdigit(*str)) return false;
-        str++;
+int parseIntegerMath(char* arg1, char* arg2, char operator, int lineNumber) {
+    int parsedArg1;
+    int parsedArg2;
+    
+    // Parse arg1
+    if (isInt(arg1)) {
+        parsedArg1 = atoi(arg1);
+    } else {
+        Variable* v1 = getVariable(arg1);
+        if (v1) {
+            if (v1->type == 0) {
+                parsedArg1 = v1->value.intValue;
+            } else {
+                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", fileName, lineNumber, v1->name);
+                exit(1);
+            }
+        } else {
+            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, arg1);
+            exit(1);
+        }
     }
-    return true;
+
+    // Parse arg2
+    if (isInt(arg2)) {
+        parsedArg2 = atoi(arg2);
+    } else {
+        Variable* v2 = getVariable(arg2);
+        if (v2) {
+            if (v2->type == 0) {
+                parsedArg2 = v2->value.intValue;
+            } else {
+                fprintf(stderr, "ERROR: (%s:%d) Cannot perform arithmetic on '%s' since it is of type STRING.\n", fileName, lineNumber, v2->name);
+                exit(1);
+            }
+        } else {
+            fprintf(stderr, "ERROR: (%s:%d) Variable '%s' is undefined.\n", fileName, lineNumber, arg2);
+            exit(1);
+        }
+    }
+
+    int res;
+
+    if (operator == '+') {
+        res = parsedArg1 + parsedArg2;
+    } else if (operator == '-') {
+        res = parsedArg1 - parsedArg2;
+    } else if (operator == '*') {
+        res = parsedArg1 * parsedArg2;
+    } else if (operator == '/') {
+        res = parsedArg1 / parsedArg2;
+    } else {
+        fprintf(stderr, "ERROR: (%s:%d) Unrecognized arithmetic operator '%c'.\n", fileName, lineNumber, operator);
+        exit(1);
+    }
+
+    return res;
+
 }

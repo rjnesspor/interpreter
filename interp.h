@@ -30,6 +30,6 @@ Variable* getVariable(char* name);
 void addVariable(Variable var);
 void printVariable(Variable* var);
 void printVariables();
-bool isInt(const char* str);
 void process(char* line, int lineNumber, bool* executionEnabled);
+int parseIntegerMath(char* arg1, char* arg2, char operator, int lineNumber);
 #endif

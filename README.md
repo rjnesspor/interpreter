@@ -10,11 +10,11 @@ Acceptable Directives
 `define [integer,string] [name] as [value]`
 - Defines a new variable with specified name and value. Currently supports `string` and `integer` types.
 
-`[name] is [name,integer] [+,-,*,/] [name,integer]`
-- Performs an arithmetic operation on the specified variable or integers, and assigns the result to a variable.
+`redefine [name] as [integer,string] [value]`
+- Redefines a variable to be a given string or integer.
 
-`[name] is [integer]`
-- Assigns the given integer to a variable.
+`redefine [name] as [integer,name] [+,-,*,/] [integer,name]`
+- Performs the given arithmetic operation and stores the result in a variable.
 
 `print [name]`
 - Prints the specified variable to stdout.
@@ -45,7 +45,7 @@ define integer y as 5
 define string message as The value of x minus y is:
 
 define integer z as 0
-z is x - y
+redefine z as x - y
 
 print message
 print z
