@@ -11,7 +11,7 @@
 
 typedef union {
     int intValue;
-    char stringValue[64];
+    char stringValue[128];
 } Value;
 
 // 0: int, 1: string

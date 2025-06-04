@@ -1,8 +1,8 @@
 # interpreter
 
-This program interprets a custom made language. The interpreter currently performs basic syntax/semantic checking but mostly assumes the input file is valid.
+This program interprets a custom made language. The interpreter currently performs basic syntax/semantic checking.
 
-There is also an [assembler](https://github.com/rjnesspor/assembler) available for this language but doesn't currently support many directives.
+There is also an [compiler](https://github.com/rjnesspor/compiler) available for this language but doesn't currently support many directives.
 
 Acceptable Directives 
 -
@@ -17,7 +17,10 @@ Acceptable Directives
 - Performs the given arithmetic operation and stores the result in a variable.
 
 `print [name]`
-- Prints the specified variable to stdout.
+- Prints the specified variable to `stdout`.
+
+`input [integer,string] as [name]`
+- Reads an input from `stdin` and stores the result in a variable.
 
 `if [integer,name] [<,>,=] [integer,name]`
 - Executes the code below it if the condition is true.
@@ -28,11 +31,12 @@ Acceptable Directives
 `leave [success/error]`
 - Exits the program with specified status code. Currently supports `success` and `error` codes.
 
-Compiling
+Compiling/Executing
 -
-`gcc interp.c -o interp`
-  
-__You can run the interpreter like this:__
+Make sure to include `utils.c` when compiling.
+
+`gcc interp.c utils.c -o interp`
+
 `./interp [input_file.txt]`
 
 Sample Program
@@ -40,28 +44,32 @@ Sample Program
 
 *input.txt*
 ```
-define integer x as 10
-define integer y as 5
-define string message as The value of x minus y is:
-
-define integer z as 0
-redefine z as x - y
-
+define string message as Enter a number:
 print message
-print z
 
-define string test as Is x minus y less than 7?
-define string yes as Yes!
-define string no as No!
+input integer as val
 
-print test
+define integer y as 0
+redefine y as 5 + val
 
-if z < 7
-print yes
+define string response as Your number plus 5 equals:
+
+print response
+print y
+
+if y > 10
+define string greater as The result is greater than 10!
+print greater
 endif
 
-if z > 7
-print no
+if y < 10
+define string less as The result is less than 10!
+print less
+endif
+
+if y = 10
+define string equal as The result equals 10!
+print equal
 endif
 
 leave success
@@ -69,10 +77,11 @@ leave success
 
 *output*
 ```
-The value of x minus y is:
-5
-Is x minus y less than 7?
-Yes!
+Enter a number:
+1   <== user input
+Your number plus 5 equals:
+6
+The result is less than 10!
 
 Program exited with status SUCCESS.
 ```

@@ -119,7 +119,7 @@ void process(char* line, int lineNumber, bool* executionEnabled) {
                 addVariable(var);
 
             } else {
-                fprintf(stderr, "ERROR: (%s:%d) '%s' did not match any valid variable types.\n", fileName, lineNumber, varType);
+                fprintf(stderr, "ERROR: (%s:%d) Expected a variable type, but got '%s'.\n", fileName, lineNumber, varType);
                 exit(1);
             }
 
@@ -270,12 +270,53 @@ void process(char* line, int lineNumber, bool* executionEnabled) {
             }
 
         } 
-        
-        else {
+        // input integer as z
+        // input string as y
+        else if (strcmp(command, "input") == 0) {
 
+            if (strcmp(tokens[2], "as") != 0) {
+                fprintf(stderr, "ERROR: (%s:%d) Expected 'as' to complete variable assignment, but got '%s'.\n", fileName, lineNumber, tokens[2]);
+                exit(1);
+            }
+
+            char* type = tokens[1];
+            if (strcmp(type, "integer") == 0) {
+
+                if (getVariable(tokens[3])) {
+                    Variable* varToChange = getVariable(tokens[3]);
+                    varToChange->type = 0;
+                    scanf("%d", &varToChange->value.intValue);
+                } else {
+                    Variable newVar;
+                    strncpy(newVar.name, tokens[3], strlen(tokens[3]) + 1);
+                    newVar.type = 0;
+                    scanf("%d", &newVar.value.intValue);
+                    addVariable(newVar);
+                }
+
+                
+            } else if (strcmp(type, "string") == 0) {
+
+                if (getVariable(tokens[3])) {
+                    Variable* varToChange = getVariable(tokens[3]);
+                    varToChange->type = 1;
+                    scanf("%127[^\n]", varToChange->value.stringValue);
+                } else {
+                    Variable newVar;
+                    strncpy(newVar.name, tokens[3], strlen(tokens[3]) + 1);
+                    newVar.type = 1;
+                    scanf("%127[^\n]", newVar.value.stringValue);
+                    addVariable(newVar);
+                }
+
+            } else {
+                fprintf(stderr, "ERROR: (%s:%d) Expected a variable type, but got '%s'.\n", fileName, lineNumber, type);
+                exit(1);
+            }
+
+        } else {
             fprintf(stderr, "ERROR: (%s:%d) Unrecognized directive '%s'.\n", fileName, lineNumber, command);
             exit(1);
-
         }
 
 }
@@ -321,6 +362,8 @@ void printVariables() {
         printVariable(&vars.variables[i]);
     }
 }
+
+
 
 int parseIntegerMath(char* arg1, char* arg2, char operator, int lineNumber) {
     int parsedArg1;
