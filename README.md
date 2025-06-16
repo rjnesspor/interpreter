@@ -1,5 +1,7 @@
 # interpreter
 
+# **This branch is NOT going to be maintained and is old!**
+
 This program interprets a custom made language. The interpreter currently performs basic syntax/semantic checking.
 
 There is also an [compiler](https://github.com/rjnesspor/compiler) available for this language but doesn't currently support many directives.
@@ -27,6 +29,12 @@ Acceptable Directives
 
 `endif`
 - Signifies the end of an if block.
+
+`loop [count]`
+- Loops the specified number of times.
+
+`endloop`
+- Signifies the end of a loop.
 
 `leave [success/error]`
 - Exits the program with specified status code. Currently supports `success` and `error` codes.
@@ -71,6 +79,13 @@ if y = 10
 define string equal as The result equals 10!
 print equal
 endif
+
+define integer zz as 0
+
+loop 5
+print zz
+redefine zz as zz + 1
+endloop
 
 leave success
 ```

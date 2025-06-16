@@ -26,7 +26,10 @@ int main(int argc, char* argv[]) {
     // Flags
     bool executionEnabled = true;
 
-    while (fgets(line, sizeof(line), file) != NULL) {
+    long loopStart = -1;
+    int loopCount = 0;
+
+    while (fgets(line, sizeof(line), file)) {
 
         // Remove newline character
         if (line[strlen(line) - 1] == '\n') {
@@ -47,6 +50,22 @@ int main(int argc, char* argv[]) {
         // If this line is empty, skip it.
         if (strlen(line) == 0) {
             continue;
+        }
+
+        // Handle loops
+        if (strncmp(line, "loop", 4) == 0) {
+            if (!(line + 5) || !isInt((line + 5))) {
+                fprintf(stderr, "ERROR: (%s:%d) Expected a loop count but got '%s'.\n", fileName, lineNumber, line + 5);
+                exit(1);
+            }
+            loopCount = atoi(line + 5);
+            loopStart = ftell(file);
+        }
+
+        if (strncmp(line, "endloop", 7) == 0) {
+            if (--loopCount > 0 && loopStart != -1) {
+                fseek(file, loopStart, SEEK_SET);
+            }
         }
 
         process(line, lineNumber, &executionEnabled);
@@ -313,6 +332,12 @@ void process(char* line, int lineNumber, bool* executionEnabled) {
                 fprintf(stderr, "ERROR: (%s:%d) Expected a variable type, but got '%s'.\n", fileName, lineNumber, type);
                 exit(1);
             }
+
+        } 
+        // loop 10
+        else if (strcmp(command, "loop") == 0 || strcmp(command, "endloop") == 0) {
+
+            // do nothing
 
         } else {
             fprintf(stderr, "ERROR: (%s:%d) Unrecognized directive '%s'.\n", fileName, lineNumber, command);
