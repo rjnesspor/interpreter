@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include "ast.h"
+#include "utils.h"
 
 Variable symbolTable[MAX_VARIABLES];
 int vars = 0;
@@ -41,7 +42,8 @@ Value eval(ASTNode* node) {
         case AST_VARIABLE:
             Value* v = getVariable(node->name);
             if (!v) {
-                fprintf(stderr, "Runtime error: variable '%s' is undefined\n", node->name);
+                putRError(node->lineNum);
+                fprintf(stderr, "Variable '%s' is undefined.\n", node->name);
                 exit(1);
             }
             return *v;
@@ -49,7 +51,8 @@ Value eval(ASTNode* node) {
             Value left = eval(node->left);
             Value right = eval(node->right);
             if (left.type != TYPE_INT || right.type != TYPE_INT) {
-                fprintf(stderr, "Runtime error: binary operation '%s' is undefined for type string\n", node->value);
+                putRError(node->lineNum);
+                fprintf(stderr, "Binary operation '%s' is undefined for type STRING.\n", node->value);
                 exit(1);
             }
             Value result;
@@ -77,7 +80,8 @@ Value eval(ASTNode* node) {
                     result.intValue = left.intValue < right.intValue;
                     break;
                 default:
-                    fprintf(stderr, "Runtime error: Unrecognized binary operator '%c'.\n", node->value[0]);
+                    putRError(node->lineNum);
+                    fprintf(stderr, "Unrecognized binary operator '%c'.\n", node->value[0]);
                     exit(1);
             }
             return result;
@@ -127,7 +131,7 @@ void execStatement(ASTNode* node) {
             }
             break;
         case AST_EOL:
-            // program finished
+            // skip this jawn
             break;
         case AST_LEAVE:
             exit(atoi(node->value));
@@ -140,8 +144,8 @@ void execStatement(ASTNode* node) {
             }
             break;
         default:
-            printf("Runtime error: Unrecognized node type %s\n", nodename(node->type));
-
+            putRError(node->lineNum);
+            printf("Unrecognized node type '%s'.\n", nodename(node->type));
             exit(1);
 
     }
@@ -149,7 +153,8 @@ void execStatement(ASTNode* node) {
 
 void interpret(ASTNode* root) {
     if (!root || root->type != AST_BLOCK) {
-        fprintf(stderr, "program root must be BLOCK\n");
+        putRError(root->lineNum);
+        fprintf(stderr, "Program root must be BLOCK.\n");
         exit(1);
     }
     execStatement(root);

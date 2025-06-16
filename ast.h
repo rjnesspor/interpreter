@@ -32,6 +32,8 @@ typedef struct ASTNode {
     int childCount;
 
     struct ASTNode* condition;
+
+    int lineNum;
 } ASTNode;
 
 ASTNode* createNode(ASTNodeType type);

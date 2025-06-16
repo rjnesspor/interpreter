@@ -32,7 +32,7 @@ int main(int argc, char const *argv[]) {
     //for (int i = 0; i < tokenCount; i++) {
         //printf("%s %s\n", tokenTypeName(tokens[i].type), tokens[i].value);
     //}
-    //print_ast(root, 0);
+    //print_ast(program, 0);
 
     atexit(free_program);
     interpret(program);
@@ -77,7 +77,7 @@ void print_ast(const ASTNode *node, int depth) {
     }
 
     indent(depth);
-    printf("%s", node_type_name(node->type));
+    printf("%s %d ", node_type_name(node->type), node->lineNum);
 
     switch (node->type) {
         case AST_DEFINE:

@@ -1,4 +1,5 @@
 #include "tokenizer.h"
+#include "utils.h"
 
 int tokenize(const char* input, Token tokens[], int cap) {
 
@@ -6,8 +7,18 @@ int tokenize(const char* input, Token tokens[], int cap) {
     int n = 0; // token count
     char buff[1024]; // mutable copy of input
     strncpy(buff, input, sizeof(buff));
+    int lineNum = 1;
 
     while (buff[i]) {
+
+        if (buff[i] == '\n') {
+            tokens[n].type = TOK_EOL;
+            tokens[n].value[0] = '\0';
+            n++;
+            i++;
+            lineNum++;
+            continue;
+        }
 
         if (isspace(buff[i])) {
             i++;
@@ -23,7 +34,8 @@ int tokenize(const char* input, Token tokens[], int cap) {
             }
 
             if (buff[i] != '"') {
-                fprintf(stderr, "Unterminated string literal at position %d token %d\n", i, n);
+                putError(lineNum);
+                fprintf(stderr, "Unterminated string literal.\n");
                 return -1;
             }
 
@@ -84,7 +96,8 @@ int tokenize(const char* input, Token tokens[], int cap) {
             continue;
         }
 
-        fprintf(stderr, "Unexpected character '%c'\n", buff[i]);
+        putError(lineNum);
+        fprintf(stderr, "Unexpected character '%c'.\n", buff[i]);
         return -1;
 
     }

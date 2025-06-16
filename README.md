@@ -8,6 +8,7 @@ Syntax Rules
 -
 - Strings must be wrapped in quotes (i.e. "Hello, world!").
 - Only single binary operations are supported (i.e. redefine x as x + y + z is NOT valid (2 binary ops)).
+- Loop conditions are **not** supported currently. Only integer literals.
 
 
 Acceptable Directives 
@@ -20,7 +21,7 @@ Acceptable Directives
 - Redefines a variable to be a given string or integer.
 
 `redefine [name] as [integer,name] [+,-,*,/] [integer,name]`
-- Performs the given arithmetic operation and stores the result in a variable.
+- Performs an arithmetic operation and stores the result in a variable.
 
 `print [name]`
 - Prints the specified variable to `stdout`.
@@ -29,29 +30,35 @@ Acceptable Directives
 - Reads an input from `stdin` and stores the result in a variable.
 
 `if [integer,name] [<,>,=] [integer,name]`
-- Executes the code below it if the condition is true.
+- Executes the block if the condition is true.
 
 `endif`
 - Signifies the end of an if block.
 
-`leave [success/error]`
+`loop [count]`
+- Executes the block a number of times, specified by `count`.
+
+`endloop`
+- Signifies the end of a loop block.
+
+`leave [0/1]`
 - Exits the program with specified status code. Currently supports `0` and `1` codes for success and error, respectively.
 
 Compiling/Executing
 -
 
-`gcc main.c parser.c tokenizer.c interpreter.c -o interp`
+`gcc main.c parser.c tokenizer.c interpreter.c utils.c -o interp`
 
 `./interp [input_file.txt]`
 
-There is also a provided Makefile that can be used.
+There is also a provided Makefile.
 
 Sample Program
 -
 
 *input.txt*
 ```
-define string message as Enter a number:
+define string message as "Enter a number:"
 print message
 
 input integer as val
@@ -59,43 +66,46 @@ input integer as val
 define integer y as 0
 redefine y as 5 + val
 
-define string response as Your number plus 5 equals:
+define string response as "Your number plus 5 equals:"
 
 print response
 print y
 
 if y > 10
-define string greater as The result is greater than 10!
+define string greater as "The result is greater than 10!"
 print greater
 endif
 
 if y < 10
-define string less as The result is less than 10!
+define string less as "The result is less than 10!"
 print less
 endif
 
 if y = 10
-define string equal as The result equals 10!
+define string equal as "The result equals 10!"
 print equal
 endif
 
-define integer zz as 0
+define integer zz as 1
 
 loop 5
 print zz
 redefine zz as zz + 1
 endloop
 
-leave success
+leave 0
 ```
 
 *output*
 ```
 Enter a number:
-1   <== user input
+1 <== User input
 Your number plus 5 equals:
 6
 The result is less than 10!
-
-Program exited with status SUCCESS.
+1
+2
+3
+4
+5
 ```
