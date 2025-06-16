@@ -4,16 +4,20 @@ Token* tokens;
 int tokenCount;
 int pos;
 
+int lineNum;
+
 ASTNode* parseProgram(Token* t, int count) {
     pos = 0;
     tokens = t;
     tokenCount = count;
+    lineNum = 1;
     
     ASTNode* program = createNode(AST_BLOCK);
 
     while (pos < tokenCount) {
         ASTNode* stmt = parseStatement();
         addChild(program, stmt);
+        lineNum++;
     }
 
     return program;
@@ -29,7 +33,8 @@ ASTNode* parseStatement() {
     }
 
     if (t->type != TOK_KEYWORD) {
-        fprintf(stderr, "Expected a keyword, got '%s'\n", t->value);
+        putError();
+        fprintf(stderr, "Expected a keyword, instead got '%s'.\n", t->value);
         exit(1);
     }
 
@@ -41,7 +46,8 @@ ASTNode* parseStatement() {
     if (strcmp(t->value, "loop") == 0) return parseLoop();
     if (strcmp(t->value, "leave") == 0) return parseLeave();
 
-    fprintf(stderr, "Unknown keyword: '%s'\n", t->value);
+    putError();
+    fprintf(stderr, "Unknown keyword '%s'.\n", t->value);
     exit(1);
 }
 
@@ -60,19 +66,24 @@ ASTNode* parseDefine() {
     Token* val = currentToken();
     if (strcmp(type, "string") == 0) {
         if (val->type != TOK_STRING) {
-            fprintf(stderr, "Expected string literal after as\n");
+            putError();
+            fprintf(stderr, "Expected a string literal after 'as'.\n");
             exit(1);
         }
         ASTNode* n = createNode(AST_LITERAL);
         strcpy(n->value, val->value);
         strcpy(n->varType, "string");
         node->right = n;
-    } else {
+    } else if (strcmp(type, "integer") == 0) {
+        if (val->type != TOK_NUMBER) {
+            putError();
+            fprintf(stderr, "Expected a number literal after 'as'.\n");
+            exit(1);
+        }
         ASTNode* n = createNode(AST_LITERAL);
         strcpy(n->value, val->value);
         strcpy(n->varType, "integer");
         node->right = n;
-        //node->right = parseExpression();
     }
 
     pos++;
@@ -87,7 +98,8 @@ ASTNode* parseRedefine() {
     expect(TOK_KEYWORD, "as");
 
     if (match(TOK_PLUS, "+") || match(TOK_MINUS, "-") || match(TOK_MUL, "*") || match(TOK_DIV, "/")) {
-        fprintf(stderr, "Unexpected operator at start of expression\n");
+        putError();
+        fprintf(stderr, "Unexpected operator at start of expression.\n");
         exit(1);
     }
 
@@ -118,7 +130,8 @@ ASTNode* parseRedefine() {
             binop->left = createNode(AST_VARIABLE);
             strcpy(binop->left->name, left->value);
         } else {
-            fprintf(stderr, "Unexpected token %s as left operand\n", left->value);
+            putError();
+            fprintf(stderr, "Unexpected token '%s' as left operand of expression.\n", left->value);
             exit(1);
         }
 
@@ -135,7 +148,8 @@ ASTNode* parseRedefine() {
             binop->right = createNode(AST_VARIABLE);
             strcpy(binop->right->name, right->value);
         } else {
-            fprintf(stderr, "Unexpected token %s as right operand\n", right->value);
+            putError();
+            fprintf(stderr, "Unexpected token '%s' as right operand of expression.\n", right->value);
             exit(1);
         }
 
@@ -152,7 +166,8 @@ ASTNode* parseRedefine() {
             strcpy(var->name, left->value);
             node->right = var;
         } else {
-            fprintf(stderr, "Unexpected token %s after 'as' - %s\n", left->value, name);
+            putError();
+            fprintf(stderr, "Unexpected token '%s' after 'as' in expression.\n", left->value);
             exit(1);
         }
     }
@@ -167,7 +182,8 @@ ASTNode* parsePrint() {
 
     Token* t = currentToken();
     if (t->type != TOK_IDENTIFIER) {
-        fprintf(stderr, "Expected identifier in print\n");
+        putError();
+        fprintf(stderr, "Expected an identifier to print.\n");
         exit(1);
     }
 
@@ -199,7 +215,8 @@ ASTNode* parseExpression() { // x < 10, x + 5, y + x, x = 1
             strcpy(expr->left->value, left->value);
             strcpy(expr->left->varType, "integer");
         } else {
-            fprintf(stderr, "Unexpected token %s as left operand\n", left->value);
+            putError();
+            fprintf(stderr, "Unexpected token '%s' as left operand of expression.\n", left->value);
             exit(1);
         }
 
@@ -211,7 +228,8 @@ ASTNode* parseExpression() { // x < 10, x + 5, y + x, x = 1
             strcpy(expr->right->value, right->value);
             strcpy(expr->right->varType, "integer");
         } else {
-            fprintf(stderr, "Unexpected token %s as right operand\n", right->value);
+            putError();
+            fprintf(stderr, "Unexpected token '%s' as right operand of expression.\n", right->value);
             exit(1);
         }
     }
@@ -237,6 +255,7 @@ ASTNode* parseBlock(const char* endKeyword) {
     ASTNode* block = createNode(AST_BLOCK);
 
     while (pos < tokenCount && !(match(TOK_KEYWORD, endKeyword))) {
+        lineNum++;
         ASTNode* stmt = parseStatement();
         addChild(block, stmt);
     }
@@ -260,10 +279,10 @@ ASTNode* parseIf() {
 ASTNode* parseLoop() {
     expect(TOK_KEYWORD, "loop");
 
-    ASTNode* count = parseExpression();
+    char* value = expectText(TOK_NUMBER);
 
     ASTNode* node = createNode(AST_LOOP);
-    node->condition = count;
+    strcpy(node->value, value);
     addChild(node, parseBlock("endloop"));
 
     return node;
@@ -295,7 +314,8 @@ int match(TokenType type, const char* text) {
 
 void expect(TokenType type, const char* text) {
     if (!match(type, text)) {
-        fprintf(stderr, "Syntax error: expected %s %s, got %s\n", tokenTypeName(type), text ? text : "(any)", currentToken()->value);
+        putError();
+        fprintf(stderr, "Expected %s '%s', but got '%s'.\n", tokenTypeName(type), text ? text : "(any)", currentToken()->value);
         exit(1);
     }
     pos++;
@@ -303,7 +323,8 @@ void expect(TokenType type, const char* text) {
 
 char* expectText(TokenType type) {
     if (pos >= tokenCount || tokens[pos].type != type) {
-        fprintf(stderr, "Syntax error: expected token type %d\n", type);
+        putError();
+        fprintf(stderr, "Expected a(n) '%s' but got a(n) '%s'.\n", tokenTypeName(type), tokenTypeName(tokens[pos].type));
         exit(1);
     }
     return tokens[pos++].value;
@@ -347,4 +368,8 @@ ASTNode* createNode(ASTNodeType type) {
 void addChild(ASTNode* parent, ASTNode* child) {
     parent->children = realloc(parent->children, sizeof(ASTNode*) * (parent->childCount + 1));
     parent->children[parent->childCount++] = child;
+}
+
+void putError() {
+    fprintf(stderr, "\nSYNTAX Error (Line %d): ", lineNum);
 }

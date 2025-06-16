@@ -3,6 +3,7 @@
 
 typedef enum {
     AST_EOL,
+    AST_EOF,
     AST_DEFINE,
     AST_REDEFINE,
     AST_PRINT,

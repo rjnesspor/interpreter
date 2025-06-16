@@ -131,6 +131,14 @@ void execStatement(ASTNode* node) {
             break;
         case AST_LEAVE:
             exit(atoi(node->value));
+        case AST_LOOP:
+            // If the loop count is a valid integer, run the loop.
+            if (isInt(node->value)) {
+                for (int i = 0; i < atoi(node->value); i++) {
+                    execStatement(node->children[0]);
+                }
+            }
+            break;
         default:
             printf("Runtime error: Unrecognized node type %s\n", nodename(node->type));
 
@@ -163,4 +171,14 @@ const char *nodename(ASTNodeType t) {
         case AST_BINOP:     return "BINOP";
         default:            return "??";
     }
+}
+
+bool isInt(const char* str) {
+    if (*str == '-' || *str == '+') str++;
+    if (*str == '\0') return false; // empty
+    while (*str) {
+        if (!isdigit(*str)) return false;
+        str++;
+    }
+    return true;
 }

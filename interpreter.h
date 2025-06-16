@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 #include "ast.h"
 
 #define MAX_VARIABLES 128
@@ -30,5 +32,6 @@ Value* getVariable(const char* name);
 void setVariable(const char* name, Value val);
 void interpret(ASTNode* root);
 const char *nodename(ASTNodeType t);
+bool isInt(const char* str);
 
 #endif

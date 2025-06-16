@@ -25,6 +25,6 @@ char* expectText(TokenType type);
 const char* tokenTypeName(TokenType type);
 ASTNode* createNode(ASTNodeType type);
 void addChild(ASTNode* parent, ASTNode* child);
-void skipEOL();
+void putError();
 
 #endif
