@@ -2,9 +2,98 @@
 #include "ast.h"
 #include "utils.h"
 
-Variable symbolTable[MAX_VARIABLES];
-int vars = 0;
+// new
+Scope scopes[MAX_SCOPES];
+int scopeTop = -1;
 
+Function functions[MAX_FUNCTIONS];
+int functionCount = 0;
+
+void defineFunction(ASTNode* node) {
+    for (int i = 0; i < functionCount; i++) {
+        if (strcmp(functions[i].name, node->name) == 0) {
+            putRError(node->lineNum);
+            fprintf(stderr, "Function '%s' is already defined.\n", node->name);
+            exit(1);
+        }
+    }
+    
+    if (functionCount >= MAX_FUNCTIONS) {
+        putRError(node->lineNum);
+        fprintf(stderr, "Function overflow.\n");
+        exit(1);
+    }
+
+    strcpy(functions[functionCount].name, node->name);
+    functions[functionCount].body = node->children[0];
+    functionCount++;
+}
+
+ASTNode* getFunction(const char* name) {
+    for (int i = 0; i < functionCount; i++) {
+        if (strcmp(functions[i].name, name) == 0) {
+            return functions[i].body;
+        }
+    }
+    return NULL;
+}
+
+void pushScope() {
+    if (scopeTop + 1 >= MAX_SCOPES) {
+        fprintf(stderr, "RUNTIME Error: Scope overflow\n");
+        exit(1);
+    }
+    scopeTop++;
+    scopes[scopeTop].count = 0;
+}
+
+void popScope() {
+    if (scopeTop <0) {
+        fprintf(stderr, "RUNTIME Error: Scope underflow\n");
+        exit(1);
+    }
+    scopeTop--;
+}
+
+Value* lookupVariable(const char* name) {
+    for (int i = scopeTop; i >= 0; i--) {
+        for (int j = 0; j < scopes[i].count; j++) {
+            if (strcmp(scopes[i].vars[j].name, name) == 0) {
+                return &scopes[i].vars[j].value;
+            }
+        }
+    }
+    return NULL;
+}
+
+void defineVariable(const char* name, Value val) {
+    Scope* curr = &scopes[scopeTop];
+    for (int i = 0; i < curr->count; i++) {
+        if (strcmp(curr->vars[i].name, name) == 0) {
+            fprintf(stderr, "RUNTIME Error: '%s' is already defined.\n", name);
+            exit(1);
+        }
+    }
+    if (curr->count >= MAX_VARIABLES) {
+        fprintf(stderr, "RUNTIME Error: Variable overflow\n");
+        exit(1);
+    }
+    strcpy(curr->vars[curr->count].name, name);
+    curr->vars[curr->count].value = val;
+    curr->count++;
+}
+
+void setVariable(const char* name, Value val) {
+    Value* existing = lookupVariable(name);
+    if (!existing) {
+        fprintf(stderr, "RUNTIME Error: '%s' is undefined.\n", name);
+        exit(1);
+    }
+    *existing = val;
+}
+
+// legacy
+/*
 Value* getVariable(const char* name) {
     for (int i = 0; i < vars; i++) {
         if (strcmp(symbolTable[i].name, name) == 0) {
@@ -23,12 +112,13 @@ void setVariable(const char* name, Value val) {
         symbolTable[vars++].value = val;
     }
 }
+*/
+// end
 
 Value eval(ASTNode* node) {
     switch(node->type) {
 
         case AST_LITERAL:
-
             Value val;
             if (strncmp(node->varType, "integer", 7) == 0) {
                 val.type = TYPE_INT;
@@ -37,10 +127,9 @@ Value eval(ASTNode* node) {
                 val.type = TYPE_STRING;
                 strcpy(val.strValue, node->value);
             }
-
             return val;
         case AST_VARIABLE:
-            Value* v = getVariable(node->name);
+            Value* v = lookupVariable(node->name);
             if (!v) {
                 putRError(node->lineNum);
                 fprintf(stderr, "Variable '%s' is undefined.\n", node->name);
@@ -95,9 +184,12 @@ void execStatement(ASTNode* node) {
     switch (node->type) {
 
         case AST_DEFINE:
+            Value defineValue = eval(node->right);
+            defineVariable(node->name, defineValue);
+            break;
         case AST_REDEFINE:
-            Value val = eval(node->right);
-            setVariable(node->name, val);
+            Value redefValue = eval(node->right);
+            setVariable(node->name, redefValue);
             break;
         case AST_PRINT:
             Value printVal = eval(node->right);
@@ -108,9 +200,11 @@ void execStatement(ASTNode* node) {
             }
             break;
         case AST_BLOCK:
+            pushScope();
             for (int i = 0; i < node->childCount; i++) {
                 execStatement(node->children[i]);
             }
+            popScope();
             break;
         case AST_INPUT:
             Value inputVal;
@@ -131,20 +225,21 @@ void execStatement(ASTNode* node) {
             }
             break;
         case AST_FUNCTION:
-            Value func;
-            func.type = TYPE_FUNCTION;
-            func.function = node->children[0];
-            setVariable(node->name, func);
+            if (scopeTop != GLOBAL_SCOPE_INDEX) {
+                putRError(node->lineNum);
+                fprintf(stderr, "Function definitions are only allowed in the global scope.\n");
+                exit(1);
+            }
+            defineFunction(node);
             break;
         case AST_CALL:
-            Value* funcToCall = getVariable(node->value);
-            if (funcToCall) {
-                execStatement(funcToCall->function);
-            } else {
+            ASTNode* funcBody = getFunction(node->value);
+            if (!funcBody) {
                 putRError(node->lineNum);
                 fprintf(stderr, "Function '%s' is undefined.\n", node->value);
                 exit(1);
             }
+            execStatement(funcBody);
             break;
         case AST_EOL:
             // skip this jawn

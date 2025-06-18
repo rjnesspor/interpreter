@@ -1,15 +1,15 @@
 # interpreter
 
-This program interprets a custom made language. The interpreter currently performs basic syntax/semantic checking.
+This program interprets a custom made language. The interpreter currently performs syntax/semantic checking and will produce syntax/runtime errors where appropriate.
 
-There is also an [compiler](https://github.com/rjnesspor/compiler) available for this language but doesn't currently support many directives.
+~~There is also an [compiler](https://github.com/rjnesspor/compiler) available for this language but doesn't currently support many directives.~~ This compiler is old and outdated. I advise against even looking at it until I update it to the newest syntax of this language.
 
 Syntax Rules
 -
 - Strings must be wrapped in quotes (i.e. "Hello, world!").
 - Only single binary operations are supported (i.e. redefine x as x + y + z is NOT valid (2 binary ops)).
 - Loop conditions are **not** supported currently. Only integer literals.
-- Variable scope (block) is **not** supported. All variables are treated as global.
+- ~~Variable scope (block) is **not** supported. All variables are treated as global.~~ Scope is now supported (and enforced)!
 
 
 Acceptable Directives 
@@ -20,6 +20,9 @@ Acceptable Directives
 
 `define func [name]`
 - Defines a new function with the specified name.
+
+`endf`
+- Signifies the end of a function block.
 
 `call [name]`
 - Executes the given function name.
@@ -65,44 +68,47 @@ Sample Program
 
 *input.txt*
 ```
-define string message as "Enter a number:"
-print message
+define func main
+    define string message as "Enter a number:"
+    print message
 
-input integer as val
+    input integer as val
 
-define integer y as 0
-redefine y as 5 + val
+    define integer y as 0
+    redefine y as 5 + val
 
-define string response as "Your number plus 5 equals:"
+    define string response as "Your number plus 5 equals:"
 
-print response
-print y
+    print response
+    print y
 
-if y > 10
-define string greater as "The result is greater than 10!"
-print greater
-endif
+    if y > 10
+    define string greater as "The result is greater than 10!"
+    print greater
+    endif
 
-if y < 10
-define string less as "The result is less than 10!"
-print less
-endif
+    if y < 10
+    define string less as "The result is less than 10!"
+    print less
+    endif
 
-if y = 10
-define string equal as "The result equals 10!"
-print equal
-endif
+    if y = 10
+    define string equal as "The result equals 10!"
+    print equal
+    endif
 
-define integer zz as 1
-define func incrementZZ
-    redefine zz as 1 + zz
+    define integer zz as 1
+    define func incrementZZ
+        redefine zz as 1 + zz
+    endf
+
+    loop 5
+    print zz
+    call incrementZZ
+    endloop
 endf
 
-loop 5
-print zz
-call incrementZZ
-endloop
-
+call main
 leave 0
 ```
 
