@@ -5,5 +5,5 @@ void putError(int n) {
 }
 
 void putRError(int n) {
-    fprintf(stderr, "RUNTIME Error (Line %d): ", n);
+    fprintf(stderr, "\nRUNTIME Error (Line %d): ", n);
 }

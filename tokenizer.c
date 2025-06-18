@@ -115,7 +115,7 @@ int tokenize(const char* input, Token tokens[], int cap) {
 int isKeyword(const char* str) {
     static const char *kw[] = {
         "define", "redefine", "print", "input", "if", "endif", "leave",
-        "loop", "endloop", "integer", "string", "as", NULL
+        "loop", "endloop", "integer", "string", "as", "func", "endf", "call", NULL
     };
 
     for (int i = 0; kw[i]; ++i) {

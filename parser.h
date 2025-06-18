@@ -4,6 +4,9 @@
 #include "tokenizer.h"
 #include "ast.h"
 
+#define LOOP_END_KEYWORD "endloop"
+#define IF_END_KEYWORD "endif"
+#define FUNC_END_KEYWORD "endf"
 
 ASTNode* parseProgram(Token* tokens, int tokenCount);
 ASTNode* parseStatement();
@@ -16,6 +19,7 @@ ASTNode* parseBlock(const char* endKeyword);
 ASTNode* parseIf();
 ASTNode* parseLoop();
 ASTNode* parseLeave();
+ASTNode* parseCall();
 Token* advance();
 void free_ast(ASTNode* node);
 Token* currentToken();

@@ -12,7 +12,8 @@
 
 typedef enum {
     TYPE_INT,
-    TYPE_STRING
+    TYPE_STRING,
+    TYPE_FUNCTION
 } ValueType;
 
 typedef struct {
@@ -20,6 +21,7 @@ typedef struct {
     union {
         int intValue;
         char strValue[256];
+        ASTNode* function;
     };
 } Value;
 

@@ -130,6 +130,22 @@ void execStatement(ASTNode* node) {
                 execStatement(node->children[0]);
             }
             break;
+        case AST_FUNCTION:
+            Value func;
+            func.type = TYPE_FUNCTION;
+            func.function = node->children[0];
+            setVariable(node->name, func);
+            break;
+        case AST_CALL:
+            Value* funcToCall = getVariable(node->value);
+            if (funcToCall) {
+                execStatement(funcToCall->function);
+            } else {
+                putRError(node->lineNum);
+                fprintf(stderr, "Function '%s' is undefined.\n", node->value);
+                exit(1);
+            }
+            break;
         case AST_EOL:
             // skip this jawn
             break;

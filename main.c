@@ -77,7 +77,7 @@ void print_ast(const ASTNode *node, int depth) {
     }
 
     indent(depth);
-    printf("%s %d ", node_type_name(node->type), node->lineNum);
+    printf("%s ", node_type_name(node->type));
 
     switch (node->type) {
         case AST_DEFINE:
@@ -85,10 +85,12 @@ void print_ast(const ASTNode *node, int depth) {
             printf(" %s %s %s", node->varType, node->name, node->value);
             break;
 
+        case AST_FUNCTION:
         case AST_VARIABLE:
-            printf(" %s", node->name);
+            printf("%s", node->name);
             break;
 
+        case AST_CALL:
         case AST_LITERAL:
             printf(" \"%s\"", node->value);
             break;
@@ -151,6 +153,8 @@ const char *node_type_name(ASTNodeType t) {
         case AST_LITERAL:   return "LITERAL";
         case AST_VARIABLE:  return "VARIABLE";
         case AST_BINOP:     return "BINOP";
+        case AST_FUNCTION:  return "FUNCTION";
+        case AST_CALL:       return "FCALL";
         default:            return "??";
     }
 }

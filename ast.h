@@ -14,7 +14,9 @@ typedef enum {
     AST_BLOCK,
     AST_LITERAL,
     AST_VARIABLE,
-    AST_BINOP
+    AST_BINOP,
+    AST_FUNCTION,
+    AST_CALL
 } ASTNodeType;
 
 typedef struct ASTNode {

@@ -9,6 +9,7 @@ Syntax Rules
 - Strings must be wrapped in quotes (i.e. "Hello, world!").
 - Only single binary operations are supported (i.e. redefine x as x + y + z is NOT valid (2 binary ops)).
 - Loop conditions are **not** supported currently. Only integer literals.
+- Variable scope (block) is **not** supported. All variables are treated as global.
 
 
 Acceptable Directives 
@@ -16,6 +17,12 @@ Acceptable Directives
 
 `define [integer,string] [name] as [value]`
 - Defines a new variable with specified name and value. Currently supports `string` and `integer` types.
+
+`define func [name]`
+- Defines a new function with the specified name.
+
+`call [name]`
+- Executes the given function name.
 
 `redefine [name] as [integer,string] [value]`
 - Redefines a variable to be a given string or integer.
@@ -87,10 +94,13 @@ print equal
 endif
 
 define integer zz as 1
+define func incrementZZ
+    redefine zz as 1 + zz
+endf
 
 loop 5
 print zz
-redefine zz as zz + 1
+call incrementZZ
 endloop
 
 leave 0

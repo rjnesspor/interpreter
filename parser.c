@@ -46,6 +46,7 @@ ASTNode* parseStatement() {
     if (strcmp(t->value, "if") == 0) return parseIf();
     if (strcmp(t->value, "loop") == 0) return parseLoop();
     if (strcmp(t->value, "leave") == 0) return parseLeave();
+    if (strcmp(t->value, "call") == 0) return parseCall();
 
     putError(lineNum);
     fprintf(stderr, "Unknown keyword '%s'.\n", t->value);
@@ -57,6 +58,14 @@ ASTNode* parseDefine() {
 
     char* type = expectText(TOK_KEYWORD);
     char* name = expectText(TOK_IDENTIFIER);
+
+    // Function definitions don't use as
+    if (strcmp(type, "func") == 0) {
+        ASTNode* func = createNode(AST_FUNCTION);
+        strcpy(func->name, name);
+        addChild(func, parseBlock(FUNC_END_KEYWORD));
+        return func;
+    }
 
     expect(TOK_KEYWORD, "as");
 
@@ -271,7 +280,7 @@ ASTNode* parseIf() {
 
     ASTNode* node = createNode(AST_IF);
     node->condition = cond;
-    addChild(node, parseBlock("endif"));
+    addChild(node, parseBlock(IF_END_KEYWORD));
 
     return node;
 }
@@ -283,7 +292,17 @@ ASTNode* parseLoop() {
 
     ASTNode* node = createNode(AST_LOOP);
     strcpy(node->value, value);
-    addChild(node, parseBlock("endloop"));
+    addChild(node, parseBlock(LOOP_END_KEYWORD));
+
+    return node;
+}
+
+ASTNode* parseCall() {
+    expect(TOK_KEYWORD, "call");
+
+    char* funcName = expectText(TOK_IDENTIFIER);
+    ASTNode* node = createNode(AST_CALL);
+    strcpy(node->value, funcName);
 
     return node;
 }
