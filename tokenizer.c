@@ -80,7 +80,7 @@ int tokenize(const char* input, Token tokens[], int cap) {
         }
 
         // operators
-        if (strchr("+-*/><=", buff[i])) {
+        if (strchr("+-*/><=(),", buff[i])) {
             if (n >= cap) return -1;
             if (buff[i] == '+') tokens[n].type = TOK_PLUS;
             if (buff[i] == '-') tokens[n].type = TOK_MINUS;
@@ -89,6 +89,9 @@ int tokenize(const char* input, Token tokens[], int cap) {
             if (buff[i] == '>') tokens[n].type = TOK_GT;
             if (buff[i] == '<') tokens[n].type = TOK_LT;
             if (buff[i] == '=') tokens[n].type = TOK_EQ;
+            if (buff[i] == '(') tokens[n].type = TOK_LPAREN;
+            if (buff[i] == ')') tokens[n].type = TOK_RPAREN;
+            if (buff[i] == ',') tokens[n].type = TOK_COMMA;
             tokens[n].value[0] = buff[i];
             tokens[n].value[1] = '\0';
             n++;
@@ -115,7 +118,8 @@ int tokenize(const char* input, Token tokens[], int cap) {
 int isKeyword(const char* str) {
     static const char *kw[] = {
         "define", "redefine", "print", "input", "if", "endif", "leave",
-        "loop", "endloop", "integer", "string", "as", "func", "endf", "call", NULL
+        "loop", "endloop", "integer", "string", "as", "func", "endf", 
+        "call", "with", NULL
     };
 
     for (int i = 0; kw[i]; ++i) {

@@ -21,7 +21,9 @@ typedef enum {
     TOK_GT,
     TOK_LT,
     TOK_EOL,
-    TOK_EOF
+    TOK_LPAREN,
+    TOK_RPAREN,
+    TOK_COMMA
 } TokenType;
 
 typedef struct {

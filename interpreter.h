@@ -12,6 +12,7 @@
 #define MAX_SCOPES 32
 #define GLOBAL_SCOPE_INDEX 0
 #define MAX_FUNCTIONS 32
+#define MAX_PARAMS 8
 
 typedef enum {
     TYPE_INT,

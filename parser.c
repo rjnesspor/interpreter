@@ -61,8 +61,28 @@ ASTNode* parseDefine() {
 
     // Function definitions don't use as
     if (strcmp(type, "func") == 0) {
+
+        expect(TOK_KEYWORD, "with");
+        expect(TOK_LPAREN, "(");
+
         ASTNode* func = createNode(AST_FUNCTION);
         strcpy(func->name, name);
+
+        while (pos < tokenCount && !(match(TOK_RPAREN, ")"))) {
+            char* type = expectText(TOK_KEYWORD);
+            char* name = expectText(TOK_IDENTIFIER);
+
+            ASTNode* param = createNode(AST_VARIABLE);
+            strcpy(param->name, name);
+            strcpy(param->varType, type);
+
+            addParam(func, param);
+
+            if (match(TOK_COMMA, ",")) advance();
+        }
+
+        expect(TOK_RPAREN, ")");
+
         addChild(func, parseBlock(FUNC_END_KEYWORD));
         return func;
     }
@@ -304,6 +324,23 @@ ASTNode* parseCall() {
     ASTNode* node = createNode(AST_CALL);
     strcpy(node->value, funcName);
 
+    expect(TOK_KEYWORD, "with");
+    expect(TOK_LPAREN, "(");
+
+    while (pos < tokenCount && !(match(TOK_RPAREN, ")"))) {
+        
+        char* val = expectText(TOK_IDENTIFIER);
+
+        ASTNode* arg = createNode(AST_VARIABLE);
+        strcpy(arg->name, val);
+
+        addArg(node, arg);
+
+        if (match(TOK_COMMA, ",")) advance();
+    }
+
+    expect(TOK_RPAREN, ")");
+
     return node;
 }
 
@@ -353,7 +390,6 @@ const char* tokenTypeName(TokenType type) {
     switch (type) {
         case TOK_KEYWORD: return "keyword";
         case TOK_IDENTIFIER: return "identifier";
-        case TOK_EOF: return "eof";
         case TOK_EOL: return "eol";
         case TOK_NUMBER: return "number";
         case TOK_PLUS: return "plus";
@@ -361,6 +397,9 @@ const char* tokenTypeName(TokenType type) {
         case TOK_MUL: return "mul";
         case TOK_DIV: return "div";
         case TOK_STRING: return "string";
+        case TOK_LPAREN: return "left paren";
+        case TOK_RPAREN: return "right paren";
+        case TOK_COMMA: return "comma";
         default: return "unknown";
     }
 }
@@ -380,13 +419,29 @@ ASTNode* createNode(ASTNodeType type) {
     node->condition = NULL;
     node->children = NULL;
     node->childCount = 0;
+    node->parameters = NULL;
+    node->paramCount = 0;
+    node->args = NULL;
+    node->argCount = 0;
 
     node->lineNum = lineNum;
 
     return node;
 }
 
+// this is terrible 
+
 void addChild(ASTNode* parent, ASTNode* child) {
     parent->children = realloc(parent->children, sizeof(ASTNode*) * (parent->childCount + 1));
     parent->children[parent->childCount++] = child;
+}
+
+void addParam(ASTNode* func, ASTNode* param) {
+    func->parameters = realloc(func->parameters, sizeof(ASTNode*) * (func->paramCount + 1));
+    func->parameters[func->paramCount++] = param;
+}
+
+void addArg(ASTNode* func, ASTNode* arg) {
+    func->args = realloc(func->args, sizeof(ASTNode*) * (func->argCount + 1));
+    func->args[func->argCount++] = arg;
 }

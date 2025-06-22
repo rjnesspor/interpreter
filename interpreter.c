@@ -25,7 +25,7 @@ void defineFunction(ASTNode* node) {
     }
 
     strcpy(functions[functionCount].name, node->name);
-    functions[functionCount].body = node->children[0];
+    functions[functionCount].body = node;
     functionCount++;
 }
 
@@ -91,29 +91,6 @@ void setVariable(const char* name, Value val) {
     }
     *existing = val;
 }
-
-// legacy
-/*
-Value* getVariable(const char* name) {
-    for (int i = 0; i < vars; i++) {
-        if (strcmp(symbolTable[i].name, name) == 0) {
-            return &symbolTable[i].value;
-        }
-    }
-    return NULL;
-}
-
-void setVariable(const char* name, Value val) {
-    Value* existing = getVariable(name);
-    if (existing) {
-        *existing = val;
-    } else {
-        strcpy(symbolTable[vars].name, name);
-        symbolTable[vars++].value = val;
-    }
-}
-*/
-// end
 
 Value eval(ASTNode* node) {
     switch(node->type) {
@@ -233,13 +210,35 @@ void execStatement(ASTNode* node) {
             defineFunction(node);
             break;
         case AST_CALL:
-            ASTNode* funcBody = getFunction(node->value);
-            if (!funcBody) {
+            ASTNode* func = getFunction(node->value);
+
+            if (!func) {
                 putRError(node->lineNum);
                 fprintf(stderr, "Function '%s' is undefined.\n", node->value);
                 exit(1);
             }
+
+            ASTNode** params = func->parameters;
+            ASTNode** args = node->args;
+
+            ASTNode* funcBody = func->children[0];
+
+            if (func->paramCount != node->argCount) {
+                putRError(node->lineNum);
+                fprintf(stderr, "Function '%s' expects %d arguments, got %d.\n", node->value, func->paramCount, node->argCount);
+                exit(1);
+            }
+
+            pushScope();
+
+            for (int i = 0; i < func->paramCount; i++) {
+                Value val = eval(args[i]);
+                defineVariable(params[i]->name, val);
+            }
+
             execStatement(funcBody);
+
+            popScope();
             break;
         case AST_EOL:
             // skip this jawn

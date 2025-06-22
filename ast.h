@@ -36,6 +36,12 @@ typedef struct ASTNode {
     struct ASTNode* condition;
 
     int lineNum;
+
+    struct ASTNode** parameters;
+    int paramCount;
+
+    struct ASTNode** args;
+    int argCount;
 } ASTNode;
 
 ASTNode* createNode(ASTNodeType type);

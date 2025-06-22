@@ -86,6 +86,9 @@ void print_ast(const ASTNode *node, int depth) {
             break;
 
         case AST_FUNCTION:
+            printf("%s", node->name);
+            break;
+
         case AST_VARIABLE:
             printf("%s", node->name);
             break;
@@ -111,6 +114,15 @@ void print_ast(const ASTNode *node, int depth) {
             break;
     }
     putchar('\n');
+
+    if (node->paramCount > 0) {
+        indent(depth + 2);
+        puts("parameters");
+        for (int i = 0; i < node->paramCount; ++i) {
+            indent(depth + 4);
+            printf("param[%d]: %s\n", i, node->parameters[i]->name);
+        }
+    }
 
 
     if (node->condition) {
