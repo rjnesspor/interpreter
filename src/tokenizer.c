@@ -25,6 +25,16 @@ int tokenize(const char* input, Token tokens[], int cap) {
             continue;
         }
 
+        // comments, skip them
+        if (buff[i] == '!') {
+            i++;
+            while (buff[i] && buff[i] != '\n') {
+                i++;
+            }
+            i++;
+            continue;
+        }
+
         // string literals
         if (buff[i] == '"') {
             i++;

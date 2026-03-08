@@ -2,9 +2,17 @@
 #include "parser.h"
 #include "interpreter.h"
 
+/**
+ * Helper functions for debug purposes, to print parse tree/tokens
+ */
 void print_ast(const ASTNode *node, int depth);
+void print_tokens(Token* tokens, int tokenCount);
 const char *node_type_name(ASTNodeType t);
 void indent(int n);
+
+/**
+ * Cleanup
+ */
 void free_ast(ASTNode* node);
 void free_program();
 
@@ -13,6 +21,11 @@ void free_program();
 ASTNode* program;
 
 int main(int argc, char const *argv[]) {
+
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <file_in>\n", argv[0]);
+        return 1;
+    }
     
     FILE* file = fopen(argv[1], "r");  
     
@@ -28,11 +41,11 @@ int main(int argc, char const *argv[]) {
     Token tokens[1024];
     int tokenCount = tokenize(source, tokens, 1024);
 
+    // print_tokens(tokens, tokenCount);
+
     program = parseProgram(tokens, tokenCount);
-    //for (int i = 0; i < tokenCount; i++) {
-        //printf("%s %s\n", tokenTypeName(tokens[i].type), tokens[i].value);
-    //}
-    //print_ast(program, 0);
+    
+    // print_ast(program, 0);
 
     atexit(free_program);
     interpret(program);
@@ -67,6 +80,12 @@ void free_ast(ASTNode* node) {
     }
 
     free(node);
+}
+
+void print_tokens(Token* tokens, int tokenCount) {
+    for (int i = 0; i < tokenCount; i++) {
+        printf("%s %s\n", tokenTypeName(tokens[i].type), tokens[i].value);
+    }
 }
 
 void print_ast(const ASTNode *node, int depth) {

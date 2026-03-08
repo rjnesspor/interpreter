@@ -17,6 +17,9 @@ Syntax Rules
 Acceptable Directives 
 -
 
+`!`
+- This character defines a comment. Anything after it on the same line will be ignored.
+
 `define [integer,string] [name] as [value]`
 - Defines a new variable with specified name and value. Currently supports `string` and `integer` types.
 
