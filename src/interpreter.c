@@ -229,6 +229,20 @@ void execStatement(ASTNode* node) {
                 exit(1);
             }
 
+            for (int i = 0; i < func->paramCount; i++) {
+                Value* v = lookupVariable(args[i]->name);
+                if (!v) {
+                    putRError(node->lineNum);
+                    fprintf(stderr, "Variable '%s' is undefined.\n", args[i]->name);
+                    exit(1);
+                }
+                if ((strcmp(params[i]->varType, "integer") == 0 && v->type == TYPE_INT)) continue;
+                if ((strcmp(params[i]->varType, "string") == 0 && v->type == TYPE_STRING)) continue;
+                putRError(node->lineNum);
+                fprintf(stderr, "Parameter %d of function '%s' expects type of %s.\n", i + 1, node->value, params[i]->varType);
+                exit(1);
+            }
+
             pushScope();
 
             for (int i = 0; i < func->paramCount; i++) {

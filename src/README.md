@@ -73,6 +73,7 @@ To-Do List
 3. Type check parameters passed to functions to make sure they are correct
 4. Allow loop conditions similar to if statements
 5. Let functions be able to return values
+6. Allow direct printing of string literals
 
 Sample Program
 -
