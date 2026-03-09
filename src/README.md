@@ -2,8 +2,6 @@
 
 This program interprets a custom made language. The interpreter currently performs syntax/semantic checking and will produce syntax/runtime errors where appropriate.
 
-~~There is also an [compiler](https://github.com/rjnesspor/compiler) available for this language but doesn't currently support many directives.~~ This compiler is old and outdated. I advise against even looking at it until I update it to the newest syntax of this language.
-
 Syntax Rules
 -
 - `string`s must be wrapped in quotes (i.e. "Hello, world!").
@@ -64,14 +62,22 @@ Compiling/Executing
 
 `gcc main.c parser.c tokenizer.c interpreter.c utils.c -o interp`
 
-`./interp [input_file.txt]`
+`./interp [input_file]`
 
 There is also a provided Makefile.
+
+To-Do List
+-
+1. Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line (The current syntax only parses arithmetic within redefine statements).
+2. Allow for more than one binary operation per statement.
+3. Type check parameters passed to functions to make sure they are correct
+4. Allow loop conditions similar to if statements
+5. Let functions be able to return values
 
 Sample Program
 -
 
-*input.txt*
+*input.rl*
 ```
 define func main with ()
     define string message as "Enter a number:"
