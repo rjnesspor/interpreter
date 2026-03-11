@@ -25,7 +25,7 @@ typedef struct ASTNode {
     char name[64];
     char varType[16];
 
-    char value[128];
+    char value[256];
 
     struct ASTNode* left;
     struct ASTNode* right;

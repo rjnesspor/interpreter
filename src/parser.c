@@ -211,14 +211,23 @@ ASTNode* parsePrint() {
     ASTNode* node = createNode(AST_PRINT);
 
     Token* t = currentToken();
-    if (t->type != TOK_IDENTIFIER) {
+    if (t->type != TOK_IDENTIFIER && t->type != TOK_STRING) {
         putError(lineNum);
-        fprintf(stderr, "Expected an identifier to print.\n");
+        fprintf(stderr, "Expected an identifier or string literal to print.\n");
         exit(1);
     }
 
-    ASTNode* var = createNode(AST_VARIABLE);
-    strcpy(var->name, t->value);
+    ASTNode* var;
+    if (t->type == TOK_IDENTIFIER) {
+        var = createNode(AST_VARIABLE);
+        strcpy(var->name, t->value);
+    } 
+    if (t->type == TOK_STRING) {
+        var = createNode(AST_LITERAL);
+        strcpy(var->value, t->value);
+        strcpy(var->varType, "string");
+    }
+    
     node->right = var;
 
     pos++;

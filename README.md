@@ -4,11 +4,10 @@ This program interprets a custom made language. The interpreter currently perfor
 
 Syntax Rules
 -
-- `string`s must be wrapped in quotes (i.e. "Hello, world!").
+- `string`s must be wrapped in double quotes (i.e. "Hello, world!").
 - Only single binary operations are supported (i.e. `redefine x as x + y + z` is **not** valid (2 binary ops)).
 - `loop` conditions are **not** supported currently. Only integer literals.
 - Variable scope is enforced.
-- Function parameter typechecking is non-existent as of now.
 - Arguments passed to `call` must be variables, not literals.
 
 
@@ -36,8 +35,8 @@ Acceptable Directives
 `redefine [name] as [integer,name] [+,-,*,/] [integer,name]`
 - Performs an arithmetic operation and stores the result in a variable.
 
-`print [name]`
-- Prints the specified variable to `stdout`.
+`print [string/name]`
+- Prints the specified variable or string to `stdout`.
 
 `input [integer,string] as [name]`
 - Reads an input from `stdin` and stores the result in a variable.
@@ -55,7 +54,7 @@ Acceptable Directives
 - Signifies the end of a loop block.
 
 `leave [0/1]`
-- Exits the program with specified status code. Currently supports `0` and `1` codes for success and error, respectively.
+- Exits the program with specified status code. Supports `0` and `1` codes for success and error, respectively.
 
 Compiling/Executing
 -
@@ -66,72 +65,15 @@ Compiling/Executing
 
 There is also a provided Makefile.
 
+Sample Programs
+-
+Many sample programs can be found in `/tests`, for your convenience. These aim to cover the basic applications of the language. 
+
 To-Do List
 -
-1. Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line (The current syntax only parses arithmetic within redefine statements).
-2. Allow for more than one binary operation per statement.
-3. Type check parameters passed to functions to make sure they are correct
-4. Allow loop conditions similar to if statements
-5. Let functions be able to return values
-6. Allow direct printing of string literals
-
-Sample Program
--
-
-*input.rl*
-```
-define func main with ()
-    define string message as "Enter a number:"
-    print message
-
-    define integer val as 0
-    input integer as val
-
-    define integer y as 0
-    redefine y as 5 + val
-
-    define string response as "Your number plus 5 equals:"
-
-    print response
-    print y
-
-    if y > 10
-      define string greater as "The result is greater than 10!"
-      print greater
-    endif
-
-    if y < 10
-      define string less as "The result is less than 10!"
-      print less
-    endif
-
-    if y = 10
-      define string equal as "The result equals 10!"
-      print equal
-    endif
-
-    define integer zz as 1
-
-    loop 5
-      print zz
-      redefine zz as zz + 1
-    endloop
-endf
-
-call main with ()
-leave 0
-```
-
-*output*
-```
-Enter a number:
-1 <== User input
-Your number plus 5 equals:
-6
-The result is less than 10!
-1
-2
-3
-4
-5
-```
+- Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line (The current syntax only parses arithmetic within redefine statements).
+- Allow for more than one binary operation per statement.
+- ~~Type check parameters passed to functions to make sure they are correct~~
+- Allow loop conditions similar to if statements
+- Let functions be able to return values
+- ~~Allow direct printing of string literals~~
