@@ -20,6 +20,7 @@ ASTNode* parseIf();
 ASTNode* parseLoop();
 ASTNode* parseLeave();
 ASTNode* parseCall();
+ASTNode* parseAtom();
 Token* advance();
 void free_ast(ASTNode* node);
 Token* currentToken();

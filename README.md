@@ -6,7 +6,7 @@ Syntax Rules
 -
 - `string`s must be wrapped in double quotes (i.e. "Hello, world!").
 - Only single binary operations are supported (i.e. `redefine x as x + y + z` is **not** valid (2 binary ops)).
-- `loop` conditions are **not** supported currently. Only integer literals.
+- `loop` conditions are **not** supported currently.
 - Variable scope is enforced.
 - Arguments passed to `call` must be variables, not literals.
 - Only integer variables or integer literals can be returned from functions.
@@ -54,8 +54,8 @@ Acceptable Directives
 `endif`
 - Signifies the end of an if block.
 
-`loop [count]`
-- Executes the block a number of times, specified by `count`.
+`loop [name/integer]`
+- Executes the block a number of times.
 
 `endloop`
 - Signifies the end of a loop block.
@@ -78,10 +78,10 @@ To-Do List
 - Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line (The current syntax only parses arithmetic within redefine statements)
 - Allow for more than one binary operation per statement
 - Allow loop conditions similar to if statements
-- Let functions be able to return values
 - Add new data types/create a generic data type framework
   - Arrays
   - Floating point numbers
 - Allow for string concatenation with the + operator
 - ~~Allow direct printing of string literals~~
 - ~~Type check parameters passed to functions to make sure they are correct~~
+- ~~Let functions be able to return values~~

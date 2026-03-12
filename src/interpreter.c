@@ -304,26 +304,24 @@ void execStatement(ASTNode* node) {
             CallFrame* frame = currentCallFrame();
             if (frame) {
                 // inside a function, so we want to return a value
-                if (strlen(node->name) > 0) {
-                    Value* v = lookupVariable(node->name);
-                    if (!v) { 
-                        exit(1);
-                    }
-                    frame->returnValue = *v;
-                    frame->hasReturned = 1;
-                } else if (strlen(node->value) > 0) {
-                    frame->returnValue = (Value){ .type = TYPE_INT, .intValue = atoi(node->value) };
+                if (node->right) {
+                    frame->returnValue = eval(node->right);
                     frame->hasReturned = 1;
                 }
             } else {
-                int status = strlen(node->value) > 0 ? atoi(node->value) : 0;
-                exit(status);
+                // not inside a function, exit accordingly
+                int integerStatus = 0;
+                if (node->right) {
+                    Value status = eval(node->right);
+                    integerStatus = status.type == TYPE_INT ? status.intValue : 0;
+                }
+                exit(integerStatus);
             }
             break;
         case AST_LOOP:
-            // If the loop count is a valid integer, run the loop.
-            if (isInt(node->value)) {
-                for (int i = 0; i < atoi(node->value); i++) {
+            if (node->right) {
+                int count = eval(node->right).intValue;
+                for (int i = 0; i < count; i++) {
                     execStatement(node->children[0]);
                 }
             }

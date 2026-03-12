@@ -317,10 +317,10 @@ ASTNode* parseIf() {
 ASTNode* parseLoop() {
     expect(TOK_KEYWORD, "loop");
 
-    char* value = expectText(TOK_NUMBER);
-
     ASTNode* node = createNode(AST_LOOP);
-    strcpy(node->value, value);
+    ASTNode* loopCount = parseAtom();
+    node->right = loopCount;
+
     addChild(node, parseBlock(LOOP_END_KEYWORD));
 
     return node;
@@ -365,16 +365,28 @@ ASTNode* parseLeave() {
     expect(TOK_KEYWORD, "leave");
 
     ASTNode* node = createNode(AST_LEAVE);
-
-    if (currentToken()->type == TOK_IDENTIFIER) {
-        char* var = expectText(TOK_IDENTIFIER);
-        strcpy(node->name, var);
-    } else if (currentToken()->type == TOK_NUMBER) {
-        char* num = expectText(TOK_NUMBER);
-        strcpy(node->value, num);
-    }
+    ASTNode* returnVal = parseAtom();
+    node->right = returnVal;
     
     return node;
+}
+
+// An expression atom is anything that can be a value, handle literals/idents
+ASTNode* parseAtom() {
+    Token* curr = currentToken();
+    if (curr->type == TOK_NUMBER) {
+        ASTNode* node = createNode(AST_LITERAL);
+        strcpy(node->value, expectText(TOK_NUMBER));
+        strcpy(node->varType, "integer");
+        return node;
+    } else if (curr->type == TOK_IDENTIFIER) {
+        ASTNode* node = createNode(AST_VARIABLE);
+        strcpy(node->name, expectText(TOK_IDENTIFIER));
+        return node;
+    }
+    putError(lineNum);
+    fprintf(stderr, "Expected a value but got '%s'.\n", curr->value);
+    exit(1);
 }
 
 Token* currentToken() {
