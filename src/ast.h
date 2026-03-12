@@ -42,6 +42,8 @@ typedef struct ASTNode {
 
     struct ASTNode** args;
     int argCount;
+
+    char returnVar[64];
 } ASTNode;
 
 ASTNode* createNode(ASTNodeType type);

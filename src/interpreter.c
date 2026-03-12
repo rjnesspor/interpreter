@@ -9,6 +9,32 @@ int scopeTop = -1;
 Function functions[MAX_FUNCTIONS];
 int functionCount = 0;
 
+CallFrame callStack[MAX_SCOPES];
+int callTop = -1;
+
+void pushCallFrame(ASTNode* function) {
+    if (callTop + 1 >= MAX_SCOPES) {
+        putRError(function->lineNum);
+        fprintf(stderr, "Call stack overflow.\n");
+        exit(1);
+    }
+    callTop++;
+    callStack[callTop].function = function;
+    callStack[callTop].hasReturned = 0;
+}
+
+void popCallFrame() {
+    if (callTop < 0) {
+        fprintf(stderr, "RUNTIME Error: Call stack underflow.\n");
+        exit(1);
+    }
+    callTop--;
+}
+
+CallFrame* currentCallFrame() {
+    return callTop >= 0 ? &callStack[callTop] : NULL;
+}
+
 void defineFunction(ASTNode* node) {
     for (int i = 0; i < functionCount; i++) {
         if (strcmp(functions[i].name, node->name) == 0) {
@@ -40,7 +66,7 @@ ASTNode* getFunction(const char* name) {
 
 void pushScope() {
     if (scopeTop + 1 >= MAX_SCOPES) {
-        fprintf(stderr, "RUNTIME Error: Scope overflow\n");
+        fprintf(stderr, "RUNTIME Error: Scope overflow.\n");
         exit(1);
     }
     scopeTop++;
@@ -49,7 +75,7 @@ void pushScope() {
 
 void popScope() {
     if (scopeTop <0) {
-        fprintf(stderr, "RUNTIME Error: Scope underflow\n");
+        fprintf(stderr, "RUNTIME Error: Scope underflow.\n");
         exit(1);
     }
     scopeTop--;
@@ -180,6 +206,7 @@ void execStatement(ASTNode* node) {
             pushScope();
             for (int i = 0; i < node->childCount; i++) {
                 execStatement(node->children[i]);
+                if (callTop >= 0 && callStack[callTop].hasReturned) break;
             }
             popScope();
             break;
@@ -244,6 +271,7 @@ void execStatement(ASTNode* node) {
             }
 
             pushScope();
+            pushCallFrame(func);
 
             for (int i = 0; i < func->paramCount; i++) {
                 Value val = eval(args[i]);
@@ -252,13 +280,46 @@ void execStatement(ASTNode* node) {
 
             execStatement(funcBody);
 
+            if (strlen(node->returnVar) > 0 && !callStack[callTop].hasReturned) {
+                putWarning(node->lineNum);
+                fprintf(stderr, "Function '%s' returned no value but assigns result to '%s'.\n", func->name, node->returnVar);
+            }
+            Value returnValue = callStack[callTop].returnValue;
+
+            popCallFrame();
             popScope();
+
+            if (strlen(node->returnVar) > 0) {
+                if (lookupVariable(node->returnVar)) {
+                    setVariable(node->returnVar, returnValue);
+                } else {
+                    defineVariable(node->returnVar, returnValue);
+                }
+            }
             break;
         case AST_EOL:
             // skip this jawn
             break;
         case AST_LEAVE:
-            exit(atoi(node->value));
+            CallFrame* frame = currentCallFrame();
+            if (frame) {
+                // inside a function, so we want to return a value
+                if (strlen(node->name) > 0) {
+                    Value* v = lookupVariable(node->name);
+                    if (!v) { 
+                        exit(1);
+                    }
+                    frame->returnValue = *v;
+                    frame->hasReturned = 1;
+                } else if (strlen(node->value) > 0) {
+                    frame->returnValue = (Value){ .type = TYPE_INT, .intValue = atoi(node->value) };
+                    frame->hasReturned = 1;
+                }
+            } else {
+                int status = strlen(node->value) > 0 ? atoi(node->value) : 0;
+                exit(status);
+            }
+            break;
         case AST_LOOP:
             // If the loop count is a valid integer, run the loop.
             if (isInt(node->value)) {

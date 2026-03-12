@@ -9,6 +9,7 @@ Syntax Rules
 - `loop` conditions are **not** supported currently. Only integer literals.
 - Variable scope is enforced.
 - Arguments passed to `call` must be variables, not literals.
+- Only integer variables or integer literals can be returned from functions.
 
 
 Acceptable Directives 
@@ -27,7 +28,13 @@ Acceptable Directives
 - Signifies the end of a function block.
 
 `call [name] with ([name], ...)`
-- Executes the given function with optional parameters.
+- Executes the given function with optional parameters and discard the return value (if any).
+
+`call [name] with ([name], ...) as [name]`
+- Executes the given function with optional parameters and store the return value.
+
+`leave [integer,name]`
+- Returns a value or variable from the current function. If done in the global scope, exits the program with a code.
 
 `redefine [name] as [integer,string] [value]`
 - Redefines a variable to be a given string or integer.
@@ -53,9 +60,6 @@ Acceptable Directives
 `endloop`
 - Signifies the end of a loop block.
 
-`leave [0/1]`
-- Exits the program with specified status code. Supports `0` and `1` codes for success and error, respectively.
-
 Compiling/Executing
 -
 
@@ -71,9 +75,13 @@ Many sample programs can be found in `/tests`, for your convenience. These aim t
 
 To-Do List
 -
-- Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line (The current syntax only parses arithmetic within redefine statements).
-- Allow for more than one binary operation per statement.
-- ~~Type check parameters passed to functions to make sure they are correct~~
+- Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line (The current syntax only parses arithmetic within redefine statements)
+- Allow for more than one binary operation per statement
 - Allow loop conditions similar to if statements
 - Let functions be able to return values
+- Add new data types/create a generic data type framework
+  - Arrays
+  - Floating point numbers
+- Allow for string concatenation with the + operator
 - ~~Allow direct printing of string literals~~
+- ~~Type check parameters passed to functions to make sure they are correct~~

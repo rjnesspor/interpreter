@@ -129,6 +129,9 @@ void print_ast(const ASTNode *node, int depth) {
             printf(" %s %s", node->varType, node->name);
             break;
 
+        case AST_LEAVE:
+            printf(" %s %s", node->name, node->value);
+
         default:
             break;
     }

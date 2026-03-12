@@ -5,5 +5,6 @@
 
 void putError(int n);
 void putRError(int n);
+void putWarning(int n);
 
 #endif

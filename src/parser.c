@@ -326,6 +326,7 @@ ASTNode* parseLoop() {
     return node;
 }
 
+// call myFunction with (x, y, z) as result
 ASTNode* parseCall() {
     expect(TOK_KEYWORD, "call");
 
@@ -350,15 +351,28 @@ ASTNode* parseCall() {
 
     expect(TOK_RPAREN, ")");
 
+    // setup a return value
+    if (match(TOK_KEYWORD, "as")) {
+        advance();
+        char* var = expectText(TOK_IDENTIFIER);
+        strcpy(node->returnVar, var);
+    }
+
     return node;
 }
 
 ASTNode* parseLeave() {
     expect(TOK_KEYWORD, "leave");
 
-    char* status = expectText(TOK_NUMBER);
     ASTNode* node = createNode(AST_LEAVE);
-    strcpy(node->value, status);
+
+    if (currentToken()->type == TOK_IDENTIFIER) {
+        char* var = expectText(TOK_IDENTIFIER);
+        strcpy(node->name, var);
+    } else if (currentToken()->type == TOK_NUMBER) {
+        char* num = expectText(TOK_NUMBER);
+        strcpy(node->value, num);
+    }
     
     return node;
 }
@@ -434,6 +448,8 @@ ASTNode* createNode(ASTNodeType type) {
     node->argCount = 0;
 
     node->lineNum = lineNum;
+
+    node->returnVar[0] = '\0';
 
     return node;
 }

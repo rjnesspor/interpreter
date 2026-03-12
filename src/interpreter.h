@@ -44,6 +44,12 @@ typedef struct {
     ASTNode* body;
 } Function;
 
+typedef struct {
+    ASTNode* function;
+    Value returnValue;
+    int hasReturned;
+} CallFrame;
+
 ASTNode* getFunction(const char* name);
 void defineFunction(ASTNode* node);
 

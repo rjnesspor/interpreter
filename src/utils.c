@@ -7,3 +7,6 @@ void putError(int n) {
 void putRError(int n) {
     fprintf(stderr, "\nRUNTIME Error (Line %d): ", n);
 }
+void putWarning(int n) {
+    fprintf(stderr, "\nWARNING (Line %d): ", n);
+}
