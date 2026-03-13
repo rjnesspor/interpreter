@@ -1,6 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include "types.h"
+
 typedef enum {
     AST_EOL,
     AST_EOF,
@@ -23,7 +25,7 @@ typedef struct ASTNode {
     ASTNodeType type;
 
     char name[64];
-    char varType[16];
+    TypeDesc* typeDesc;
 
     char value[256];
 

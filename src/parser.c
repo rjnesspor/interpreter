@@ -56,25 +56,25 @@ ASTNode* parseStatement() {
 ASTNode* parseDefine() {
     expect(TOK_KEYWORD, "define");
 
-    char* type = expectText(TOK_KEYWORD);
+    TypeDesc* typeDesc = parseTypeKeyword();
     char* name = expectText(TOK_IDENTIFIER);
 
-    // Function definitions don't use as
-    if (strcmp(type, "func") == 0) {
-
+    if (typeEquals(typeDesc, typeFunction())) {
+        
         expect(TOK_KEYWORD, "with");
         expect(TOK_LPAREN, "(");
 
         ASTNode* func = createNode(AST_FUNCTION);
         strcpy(func->name, name);
+        func->typeDesc = typeDesc;
 
         while (pos < tokenCount && !(match(TOK_RPAREN, ")"))) {
-            char* type = expectText(TOK_KEYWORD);
-            char* name = expectText(TOK_IDENTIFIER);
+            TypeDesc* paramTypeDesc = parseTypeKeyword();
+            char* paramName = expectText(TOK_IDENTIFIER);
 
             ASTNode* param = createNode(AST_VARIABLE);
-            strcpy(param->name, name);
-            strcpy(param->varType, type);
+            strcpy(param->name, paramName);
+            param->typeDesc = paramTypeDesc;
 
             addParam(func, param);
 
@@ -89,118 +89,22 @@ ASTNode* parseDefine() {
 
     expect(TOK_KEYWORD, "as");
 
-    ASTNode* node = createNode(AST_DEFINE);
-    strcpy(node->varType, type);
-    strcpy(node->name, name);
+    ASTNode* defineNode = createNode(AST_DEFINE);
+    strcpy(defineNode->name, name);
+    defineNode->typeDesc = typeDesc;
+    defineNode->right = parseExpression();
 
-    Token* val = currentToken();
-    if (strcmp(type, "string") == 0) {
-        if (val->type != TOK_STRING) {
-            putError(lineNum);
-            fprintf(stderr, "Expected a string literal after 'as'.\n");
-            exit(1);
-        }
-        ASTNode* n = createNode(AST_LITERAL);
-        strcpy(n->value, val->value);
-        strcpy(n->varType, "string");
-        node->right = n;
-    } else if (strcmp(type, "integer") == 0) {
-        if (val->type != TOK_NUMBER) {
-            putError(lineNum);
-            fprintf(stderr, "Expected a number literal after 'as'.\n");
-            exit(1);
-        }
-        ASTNode* n = createNode(AST_LITERAL);
-        strcpy(n->value, val->value);
-        strcpy(n->varType, "integer");
-        node->right = n;
-    }
-
-    pos++;
-
-    return node;
+    return defineNode;
 }
 
 ASTNode* parseRedefine() {
     expect(TOK_KEYWORD, "redefine");
-
     char* name = expectText(TOK_IDENTIFIER);
     expect(TOK_KEYWORD, "as");
 
-    if (match(TOK_PLUS, "+") || match(TOK_MINUS, "-") || match(TOK_MUL, "*") || match(TOK_DIV, "/")) {
-        putError(lineNum);
-        fprintf(stderr, "Unexpected operator at start of expression.\n");
-        exit(1);
-    }
-
     ASTNode* node = createNode(AST_REDEFINE);
     strcpy(node->name, name);
-
-    Token* left = advance();
-    Token* t = currentToken();
-
-    if (t->type == TOK_PLUS || t->type == TOK_MINUS || t->type == TOK_MUL || t->type == TOK_DIV) {
-        // binary op
-        ASTNode* binop = createNode(AST_BINOP);
-        strcpy(binop->value, t->value);
-        advance();
-
-        Token* right = advance();
-
-        // left 
-        if (left->type == TOK_NUMBER ||  left->type == TOK_STRING) {
-            binop->left = createNode(AST_LITERAL);
-            strcpy(binop->left->value, left->value);
-            if (left->type == TOK_NUMBER) {
-                strcpy(binop->left->varType, "integer");
-            } else if (left->type == TOK_STRING) {
-                strcpy(binop->left->varType, "string");
-            }
-        } else if (left->type == TOK_IDENTIFIER) {
-            binop->left = createNode(AST_VARIABLE);
-            strcpy(binop->left->name, left->value);
-        } else {
-            putError(lineNum);
-            fprintf(stderr, "Unexpected token '%s' as left operand of expression.\n", left->value);
-            exit(1);
-        }
-
-        // right
-        if (right->type == TOK_NUMBER ||  right->type == TOK_STRING) {
-            binop->right = createNode(AST_LITERAL);
-            strcpy(binop->right->value, right->value);
-            if (right->type == TOK_NUMBER) {
-                strcpy(binop->right->varType, "integer");
-            } else if (right->type == TOK_STRING) {
-                strcpy(binop->right->varType, "string");
-            }
-        } else if (right->type == TOK_IDENTIFIER) {
-            binop->right = createNode(AST_VARIABLE);
-            strcpy(binop->right->name, right->value);
-        } else {
-            putError(lineNum);
-            fprintf(stderr, "Unexpected token '%s' as right operand of expression.\n", right->value);
-            exit(1);
-        }
-
-        node->right = binop;
-
-    } else {
-        // simple value
-        if (left->type == TOK_NUMBER || left->type == TOK_STRING) {
-            ASTNode* val = createNode(AST_LITERAL);
-            strcpy(val->value, left->value);
-            node->right = val;
-        } else if (left->type == TOK_IDENTIFIER) {
-            ASTNode* var = createNode(AST_VARIABLE);
-            strcpy(var->name, left->value);
-            node->right = var;
-        } else {
-            putError(lineNum);
-            fprintf(stderr, "Unexpected token '%s' after 'as' in expression.\n", left->value);
-            exit(1);
-        }
-    }
+    node->right = parseExpression();
 
     return node;
 }
@@ -209,85 +113,48 @@ ASTNode* parsePrint() {
     expect(TOK_KEYWORD, "print");
 
     ASTNode* node = createNode(AST_PRINT);
-
-    Token* t = currentToken();
-    if (t->type != TOK_IDENTIFIER && t->type != TOK_STRING) {
-        putError(lineNum);
-        fprintf(stderr, "Expected an identifier or string literal to print.\n");
-        exit(1);
-    }
-
-    ASTNode* var;
-    if (t->type == TOK_IDENTIFIER) {
-        var = createNode(AST_VARIABLE);
-        strcpy(var->name, t->value);
-    } 
-    if (t->type == TOK_STRING) {
-        var = createNode(AST_LITERAL);
-        strcpy(var->value, t->value);
-        strcpy(var->varType, "string");
-    }
-    
-    node->right = var;
+    node->right = parseAtom();
 
     pos++;
     return node;
 }
 
-ASTNode* parseExpression() { // x < 10, x + 5, y + x, x = 1
-    Token* left = advance();
+ASTNode* parseExpression() {
+    ASTNode* left = parseAtom();
 
-    Token* t = currentToken();
-    ASTNode* expr = NULL;
-    
-    if (t->type == TOK_PLUS || t->type == TOK_MINUS || t->type == TOK_MUL || t->type == TOK_DIV || t->type == TOK_GT || t->type == TOK_LT || t->type == TOK_EQ) {
-        advance();
-        expr = createNode(AST_BINOP);
-        strcpy(expr->value, t->value);
-        Token* right = advance();
-
-        if (left->type == TOK_IDENTIFIER) {
-            expr->left = createNode(AST_VARIABLE);
-            strcpy(expr->left->name, left->value);
-        } else if (left->type == TOK_NUMBER) {
-            expr->left = createNode(AST_LITERAL);
-            strcpy(expr->left->value, left->value);
-            strcpy(expr->left->varType, "integer");
-        } else {
-            putError(lineNum);
-            fprintf(stderr, "Unexpected token '%s' as left operand of expression.\n", left->value);
-            exit(1);
-        }
-
-        if (right->type == TOK_IDENTIFIER) {
-            expr->right = createNode(AST_VARIABLE);
-            strcpy(expr->right->name, right->value);
-        } else if (right->type == TOK_NUMBER) {
-            expr->right = createNode(AST_LITERAL);
-            strcpy(expr->right->value, right->value);
-            strcpy(expr->right->varType, "integer");
-        } else {
-            putError(lineNum);
-            fprintf(stderr, "Unexpected token '%s' as right operand of expression.\n", right->value);
-            exit(1);
-        }
+    // Thanks Claude!
+    if (!(currentToken()->type == TOK_PLUS  ||
+          currentToken()->type == TOK_MINUS ||
+          currentToken()->type == TOK_MUL   ||
+          currentToken()->type == TOK_DIV   ||
+          currentToken()->type == TOK_GT    ||
+          currentToken()->type == TOK_LT    ||
+          currentToken()->type == TOK_EQ)) {
+        return left;
     }
+    //
 
-    return expr;
+    ASTNode* binop = createNode(AST_BINOP);
+    strcpy(binop->value, currentToken()->value);
+    advance();
+
+    binop->left = left;
+    binop->right = parseAtom();
+
+    return binop;
 }
 
 ASTNode* parseInput() {
     expect(TOK_KEYWORD, "input");
-
-    char* type = expectText(TOK_KEYWORD);
+    TypeDesc* typeDesc = parseTypeKeyword();
     expect(TOK_KEYWORD, "as");
     char* name = expectText(TOK_IDENTIFIER);
 
-    ASTNode* node = createNode(AST_INPUT);
-    strcpy(node->name, name);
-    strcpy(node->varType, type);
+    ASTNode* inputNode = createNode(AST_INPUT);
+    strcpy(inputNode->name, name);
+    inputNode->typeDesc = typeDesc;
 
-    return node;
+    return inputNode;
 }
 
 ASTNode* parseBlock(const char* endKeyword) {
@@ -326,7 +193,6 @@ ASTNode* parseLoop() {
     return node;
 }
 
-// call myFunction with (x, y, z) as result
 ASTNode* parseCall() {
     expect(TOK_KEYWORD, "call");
 
@@ -339,11 +205,7 @@ ASTNode* parseCall() {
 
     while (pos < tokenCount && !(match(TOK_RPAREN, ")"))) {
         
-        char* val = expectText(TOK_IDENTIFIER);
-
-        ASTNode* arg = createNode(AST_VARIABLE);
-        strcpy(arg->name, val);
-
+        ASTNode* arg = parseAtom();
         addArg(node, arg);
 
         if (match(TOK_COMMA, ",")) advance();
@@ -351,7 +213,6 @@ ASTNode* parseCall() {
 
     expect(TOK_RPAREN, ")");
 
-    // setup a return value
     if (match(TOK_KEYWORD, "as")) {
         advance();
         char* var = expectText(TOK_IDENTIFIER);
@@ -371,17 +232,23 @@ ASTNode* parseLeave() {
     return node;
 }
 
-// An expression atom is anything that can be a value, handle literals/idents
+// An expression atom is anything that can be a value.
+// So, we are able to handle literals, variables, etc.
 ASTNode* parseAtom() {
     Token* curr = currentToken();
     if (curr->type == TOK_NUMBER) {
         ASTNode* node = createNode(AST_LITERAL);
         strcpy(node->value, expectText(TOK_NUMBER));
-        strcpy(node->varType, "integer");
+        node->typeDesc = typeInt();
         return node;
     } else if (curr->type == TOK_IDENTIFIER) {
         ASTNode* node = createNode(AST_VARIABLE);
         strcpy(node->name, expectText(TOK_IDENTIFIER));
+        return node;
+    } else if (curr->type == TOK_STRING) {
+        ASTNode* node = createNode(AST_LITERAL);
+        strcpy(node->value, expectText(TOK_STRING));
+        node->typeDesc = typeString();
         return node;
     }
     putError(lineNum);
@@ -448,7 +315,7 @@ ASTNode* createNode(ASTNodeType type) {
     node->type = type;
     node->name[0] = '\0';
     node->value[0] = '\0';
-    node->varType[0] = '\0';
+    node->typeDesc = NULL;
     node->left = NULL;
     node->right = NULL;
     node->condition = NULL;
@@ -466,8 +333,6 @@ ASTNode* createNode(ASTNodeType type) {
     return node;
 }
 
-// this is terrible 
-
 void addChild(ASTNode* parent, ASTNode* child) {
     parent->children = realloc(parent->children, sizeof(ASTNode*) * (parent->childCount + 1));
     parent->children[parent->childCount++] = child;
@@ -481,4 +346,26 @@ void addParam(ASTNode* func, ASTNode* param) {
 void addArg(ASTNode* func, ASTNode* arg) {
     func->args = realloc(func->args, sizeof(ASTNode*) * (func->argCount + 1));
     func->args[func->argCount++] = arg;
+}
+
+TypeDesc* parseTypeKeyword() {
+    if (match(TOK_KEYWORD, "integer")) {
+        advance();
+        return typeInt();
+    }
+    if (match(TOK_KEYWORD, "string")) {
+        advance();
+        return typeString();
+    }
+    if (match(TOK_KEYWORD, "float")) {
+        advance();
+        return typeFloat();
+    }
+    if (match(TOK_KEYWORD, "func")) {
+        advance();
+        return typeFunction();
+    }
+    putError(lineNum);
+    fprintf(stderr, "Expected a type keyword but got '%s'.\n", currentToken()->value);
+    exit(1);
 }

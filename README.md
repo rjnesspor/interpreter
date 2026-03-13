@@ -9,8 +9,12 @@ Syntax Rules
 - `loop` conditions are **not** supported currently.
 - Variable scope is enforced.
 - Arguments passed to `call` must be variables, not literals.
-- Only integer variables or integer literals can be returned from functions.
 
+Data Types
+-
+- `integer`
+- `string`
+- ~~`float`~~ (Coming soon)
 
 Acceptable Directives 
 -
@@ -18,10 +22,13 @@ Acceptable Directives
 `!`
 - This character defines a comment. Anything after it on the same line will be ignored.
 
-`define [integer,string] [name] as [value]`
-- Defines a new variable with specified name and value. Currently supports `string` and `integer` types.
+`define [type] [name] as [value]`
+- Defines a new variable with specified name and value.
 
-`define func [name] with ([integer,string] [name], ...)`
+`define [type] as [literal,name] [+,-,*,/] [literal,name]`
+- Performs an arithmetic operation and stores the result in a new variable.
+
+`define func [name] with ([type] [name], ...)`
 - Defines a new function with the specified name and optional parameters.
 
 `endf`
@@ -33,28 +40,28 @@ Acceptable Directives
 `call [name] with ([name], ...) as [name]`
 - Executes the given function with optional parameters and store the return value.
 
-`leave [integer,name]`
+`leave [integer literal,name]`
 - Returns a value or variable from the current function. If done in the global scope, exits the program with a code.
 
-`redefine [name] as [integer,string] [value]`
-- Redefines a variable to be a given string or integer.
+`redefine [name] as [type] [value]`
+- Redefines a variable to be a given value.
 
-`redefine [name] as [integer,name] [+,-,*,/] [integer,name]`
+`redefine [name] as [literal,name] [+,-,*,/] [literal,name]`
 - Performs an arithmetic operation and stores the result in a variable.
 
-`print [string/name]`
+`print [literal/name]`
 - Prints the specified variable or string to `stdout`.
 
-`input [integer,string] as [name]`
+`input [type] as [name]`
 - Reads an input from `stdin` and stores the result in a variable.
 
-`if [integer,name] [<,>,=] [integer,name]`
+`if [literal,name] [<,>,=] [literal,name]`
 - Executes the block if the condition is true.
 
 `endif`
 - Signifies the end of an if block.
 
-`loop [name/integer]`
+`loop [integer literal,name]`
 - Executes the block a number of times.
 
 `endloop`
@@ -75,13 +82,14 @@ Many sample programs can be found in `/tests`, for your convenience. These aim t
 
 To-Do List
 -
-- Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line (The current syntax only parses arithmetic within redefine statements)
+
 - Allow for more than one binary operation per statement
 - Allow loop conditions similar to if statements
-- Add new data types/create a generic data type framework
-  - Arrays
-  - Floating point numbers
 - Allow for string concatenation with the + operator
+- ~~Add new data types/create a generic data type framework~~
+  - Arrays (In progress)
+  - Floating point numbers (In progress)
+- ~~Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line~~
 - ~~Allow direct printing of string literals~~
 - ~~Type check parameters passed to functions to make sure they are correct~~
 - ~~Let functions be able to return values~~

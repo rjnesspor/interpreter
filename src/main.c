@@ -101,7 +101,7 @@ void print_ast(const ASTNode *node, int depth) {
     switch (node->type) {
         case AST_DEFINE:
         case AST_REDEFINE:
-            printf(" %s %s %s", node->varType, node->name, node->value);
+            printf(" %s %s %s", typeName(node->typeDesc), node->name, node->value);
             break;
 
         case AST_FUNCTION:
@@ -126,7 +126,7 @@ void print_ast(const ASTNode *node, int depth) {
             break;
 
         case AST_INPUT:
-            printf(" %s %s", node->varType, node->name);
+            printf(" %s %s", typeName(node->typeDesc), node->name);
             break;
 
         case AST_LEAVE:

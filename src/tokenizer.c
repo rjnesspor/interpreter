@@ -31,7 +31,6 @@ int tokenize(const char* input, Token tokens[], int cap) {
             while (buff[i] && buff[i] != '\n') {
                 i++;
             }
-            i++;
             continue;
         }
 

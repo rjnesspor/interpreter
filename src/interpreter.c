@@ -1,8 +1,5 @@
 #include "interpreter.h"
-#include "ast.h"
-#include "utils.h"
 
-// new
 Scope scopes[MAX_SCOPES];
 int scopeTop = -1;
 
@@ -92,16 +89,20 @@ Value* lookupVariable(const char* name) {
     return NULL;
 }
 
-void defineVariable(const char* name, Value val) {
+void defineVariable(const char* name, TypeDesc* declaredType, Value val) {
     Scope* curr = &scopes[scopeTop];
     for (int i = 0; i < curr->count; i++) {
         if (strcmp(curr->vars[i].name, name) == 0) {
-            fprintf(stderr, "RUNTIME Error: '%s' is already defined.\n", name);
+            fprintf(stderr, "\nRUNTIME Error: '%s' is already defined.\n", name);
             exit(1);
         }
     }
     if (curr->count >= MAX_VARIABLES) {
-        fprintf(stderr, "RUNTIME Error: Variable overflow\n");
+        fprintf(stderr, "\nRUNTIME Error: Variable overflow\n");
+        exit(1);
+    }
+    if (!typeEquals(declaredType, val.typeDesc)) {
+        fprintf(stderr, "\nRUNTIME Error: Type mismatch: cannot assign '%s' value to variable '%s' which is of type '%s'.\n", typeName(val.typeDesc), name, typeName(declaredType));
         exit(1);
     }
     strcpy(curr->vars[curr->count].name, name);
@@ -112,7 +113,11 @@ void defineVariable(const char* name, Value val) {
 void setVariable(const char* name, Value val) {
     Value* existing = lookupVariable(name);
     if (!existing) {
-        fprintf(stderr, "RUNTIME Error: '%s' is undefined.\n", name);
+        fprintf(stderr, "\nRUNTIME Error: '%s' is undefined.\n", name);
+        exit(1);
+    }
+    if (!typeEquals(val.typeDesc, existing->typeDesc)) {
+        fprintf(stderr, "\nRUNTIME Error: Type mismatch: cannot assign '%s' value to variable '%s' which is of type '%s'.\n", typeName(val.typeDesc), name, typeName(existing->typeDesc));
         exit(1);
     }
     *existing = val;
@@ -120,15 +125,17 @@ void setVariable(const char* name, Value val) {
 
 Value eval(ASTNode* node) {
     switch(node->type) {
-
         case AST_LITERAL:
             Value val;
-            if (strncmp(node->varType, "integer", 7) == 0) {
-                val.type = TYPE_INT;
+            if (typeEquals(node->typeDesc, typeInt())) {
+                val.typeDesc = typeInt();
                 val.intValue = atoi(node->value);
-            } else if (strncmp(node->varType, "string", 6) == 0) {
-                val.type = TYPE_STRING;
+            } else if (typeEquals(node->typeDesc, typeString())) {
+                val.typeDesc = typeString();
                 strcpy(val.strValue, node->value);
+            } else if (typeEquals(node->typeDesc, typeFloat())) {
+                val.typeDesc = typeFloat();
+                val.floatValue = atof(node->value);
             }
             return val;
         case AST_VARIABLE:
@@ -142,13 +149,13 @@ Value eval(ASTNode* node) {
         case AST_BINOP:
             Value left = eval(node->left);
             Value right = eval(node->right);
-            if (left.type != TYPE_INT || right.type != TYPE_INT) {
+            if (!typeEquals(left.typeDesc, typeInt()) || !typeEquals(right.typeDesc, typeInt())) {
                 putRError(node->lineNum);
-                fprintf(stderr, "Binary operation '%s' is undefined for type STRING.\n", node->value);
+                fprintf(stderr, "Binary operation '%s' is undefined for operands '%s' and '%s'.\n", node->value, typeName(left.typeDesc), typeName(right.typeDesc));
                 exit(1);
             }
             Value result;
-            result.type = TYPE_INT;
+            result.typeDesc = typeInt();
             switch (node->value[0]) {
                 case '+':
                     result.intValue = left.intValue + right.intValue;
@@ -178,17 +185,16 @@ Value eval(ASTNode* node) {
             }
             return result;
         default:
-            printf("oops %s", node->name);
+            printf("Something went wrong with node: %s", node->name);
             exit(1);
     }
 }
 
 void execStatement(ASTNode* node) {
     switch (node->type) {
-
         case AST_DEFINE:
             Value defineValue = eval(node->right);
-            defineVariable(node->name, defineValue);
+            defineVariable(node->name, node->typeDesc, defineValue);
             break;
         case AST_REDEFINE:
             Value redefValue = eval(node->right);
@@ -196,10 +202,12 @@ void execStatement(ASTNode* node) {
             break;
         case AST_PRINT:
             Value printVal = eval(node->right);
-            if (printVal.type == TYPE_INT) {
+            if (typeEquals(printVal.typeDesc, typeInt())) {
                 printf("%d\n", printVal.intValue);
-            } else {
+            } else if (typeEquals(printVal.typeDesc, typeString())) {
                 printf("%s\n", printVal.strValue);
+            } else if (typeEquals(printVal.typeDesc, typeFloat())) {
+                printf("%f\n", printVal.floatValue);
             }
             break;
         case AST_BLOCK:
@@ -212,13 +220,17 @@ void execStatement(ASTNode* node) {
             break;
         case AST_INPUT:
             Value inputVal;
-            if (strncmp(node->varType, "string", 6) == 0) {
-                inputVal.type = TYPE_STRING;
+            if (typeEquals(node->typeDesc, typeInt())) {
+                inputVal.typeDesc = typeInt();
+                fscanf(stdin, "%d", &inputVal.intValue);
+                setVariable(node->name, inputVal);
+            } else if (typeEquals(node->typeDesc, typeString())) {
+                inputVal.typeDesc = typeString();
                 fscanf(stdin, "%[^\n]", &inputVal.strValue);
                 setVariable(node->name, inputVal);
-            } else if (strncmp(node->varType, "integer", 7) == 0) {
-                inputVal.type = TYPE_INT;
-                fscanf(stdin, "%d", &inputVal.intValue);
+            } else if (typeEquals(node->typeDesc, typeFloat())) {
+                inputVal.typeDesc = typeFloat();
+                fscanf(stdin, "%f", &inputVal.floatValue);
                 setVariable(node->name, inputVal);
             }
             break;
@@ -263,10 +275,9 @@ void execStatement(ASTNode* node) {
                     fprintf(stderr, "Variable '%s' is undefined.\n", args[i]->name);
                     exit(1);
                 }
-                if ((strcmp(params[i]->varType, "integer") == 0 && v->type == TYPE_INT)) continue;
-                if ((strcmp(params[i]->varType, "string") == 0 && v->type == TYPE_STRING)) continue;
+                if (typeEquals(params[i]->typeDesc, v->typeDesc)) continue;
                 putRError(node->lineNum);
-                fprintf(stderr, "Parameter %d of function '%s' expects type of %s.\n", i + 1, node->value, params[i]->varType);
+                fprintf(stderr, "Parameter %d of function '%s' expects type of '%s', but got '%s'.\n", i + 1, node->value, typeName(params[i]->typeDesc), typeName(v->typeDesc));
                 exit(1);
             }
 
@@ -275,7 +286,7 @@ void execStatement(ASTNode* node) {
 
             for (int i = 0; i < func->paramCount; i++) {
                 Value val = eval(args[i]);
-                defineVariable(params[i]->name, val);
+                defineVariable(params[i]->name, params[i]->typeDesc, val);
             }
 
             execStatement(funcBody);
@@ -293,12 +304,11 @@ void execStatement(ASTNode* node) {
                 if (lookupVariable(node->returnVar)) {
                     setVariable(node->returnVar, returnValue);
                 } else {
-                    defineVariable(node->returnVar, returnValue);
+                    defineVariable(node->returnVar, returnValue.typeDesc, returnValue);
                 }
             }
             break;
         case AST_EOL:
-            // skip this jawn
             break;
         case AST_LEAVE:
             CallFrame* frame = currentCallFrame();
@@ -313,15 +323,20 @@ void execStatement(ASTNode* node) {
                 int integerStatus = 0;
                 if (node->right) {
                     Value status = eval(node->right);
-                    integerStatus = status.type == TYPE_INT ? status.intValue : 0;
+                    integerStatus = typeEquals(status.typeDesc, typeInt()) ? status.intValue : 0;
                 }
                 exit(integerStatus);
             }
             break;
         case AST_LOOP:
             if (node->right) {
-                int count = eval(node->right).intValue;
-                for (int i = 0; i < count; i++) {
+                Value count = eval(node->right);
+                if (!typeEquals(count.typeDesc, typeInt())) {
+                    putRError(node->lineNum);
+                    printf("Loop count must be an integer, but encountered a(n) '%s'.\n", typeName(count.typeDesc));
+                    exit(1);
+                }
+                for (int i = 0; i < count.intValue; i++) {
                     execStatement(node->children[0]);
                 }
             }

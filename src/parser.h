@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "types.h"
 #include "tokenizer.h"
 #include "ast.h"
 
@@ -32,5 +33,7 @@ ASTNode* createNode(ASTNodeType type);
 void addChild(ASTNode* parent, ASTNode* child);
 void addParam(ASTNode* func, ASTNode* param);
 void addArg(ASTNode* func, ASTNode* arg);
+
+TypeDesc* parseTypeKeyword();
 
 #endif

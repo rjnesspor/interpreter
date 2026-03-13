@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include "ast.h"
+#include "types.h"
+#include "utils.h"
 
 #define MAX_VARIABLES 128
 #define MAX_SCOPES 32
@@ -14,17 +16,17 @@
 #define MAX_FUNCTIONS 32
 #define MAX_PARAMS 8
 
-typedef enum {
-    TYPE_INT,
-    TYPE_STRING,
-    TYPE_FUNCTION
-} ValueType;
-
 typedef struct {
-    ValueType type;
+    TypeDesc* typeDesc;
     union {
         int intValue;
+        float floatValue;
         char strValue[256];
+        struct {
+            struct Value* elements;
+            int length;
+        } arrayValue;
+        ASTNode* functionValue;
         ASTNode* function;
     };
 } Value;
@@ -56,7 +58,7 @@ void defineFunction(ASTNode* node);
 void pushScope();
 void popScope();
 Value* lookupVariable(const char* name);
-void defineVariable(const char* name, Value val);
+void defineVariable(const char* name, TypeDesc* declaredType, Value val);
 void setVariable(const char* name, Value val);
 
 Value* getVariable(const char* name);
