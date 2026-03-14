@@ -4,8 +4,7 @@
 ! Functions are defined using the 'define' keyword similar to regular variables.
 ! Parameters can be specified inside the parentheses.
 define func add_nums with (integer x, integer y)
-    define integer z as 0
-    redefine z as x + y
+    define integer z as x + y
     
     ! The 'leave' keyword is used to return values.
     leave z

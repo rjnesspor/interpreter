@@ -18,50 +18,46 @@ Data Types
 
 Acceptable Directives 
 -
+`{}` is required. \
+`[]` is optional.
 
 `!`
 - This character defines a comment. Anything after it on the same line will be ignored.
 
-`define [type] [name] as [value]`
-- Defines a new variable with specified name and value.
+`define {type} {name} as {literal|name} [+|-|*|/] [literal|name]`
+- Defines a new variable to be a given value or arithmetic result.
 
-`define [type] as [literal,name] [+,-,*,/] [literal,name]`
-- Performs an arithmetic operation and stores the result in a new variable.
-
-`define func [name] with ([type] [name], ...)`
+`define func {name} with ([type] [name], ...)`
 - Defines a new function with the specified name and optional parameters.
 
 `endf`
 - Signifies the end of a function block.
 
-`call [name] with ([name], ...)`
-- Executes the given function with optional parameters and discard the return value (if any).
+`call {name} with ([name], ...)`
+- Executes the given function with optional parameters.
 
-`call [name] with ([name], ...) as [name]`
+`call {name} with ([name], ...) as [name]`
 - Executes the given function with optional parameters and store the return value.
 
-`leave [integer literal,name]`
+`leave [literal|name]`
 - Returns a value or variable from the current function. If done in the global scope, exits the program with a code.
 
-`redefine [name] as [type] [value]`
-- Redefines a variable to be a given value.
+`redefine {name} as {literal|name} [+|-|*|/] [literal|name]`
+- Redefines a variable to be a given value or arithmetic result.
 
-`redefine [name] as [literal,name] [+,-,*,/] [literal,name]`
-- Performs an arithmetic operation and stores the result in a variable.
+`print {literal|name}`
+- Prints the specified variable or literal to `stdout`.
 
-`print [literal/name]`
-- Prints the specified variable or string to `stdout`.
-
-`input [type] as [name]`
+`input {type} as {name}`
 - Reads an input from `stdin` and stores the result in a variable.
 
-`if [literal,name] [<,>,=] [literal,name]`
+`if {literal|name} {<|>|=} {literal|name}`
 - Executes the block if the condition is true.
 
 `endif`
 - Signifies the end of an if block.
 
-`loop [integer literal,name]`
+`loop {integer literal|name}`
 - Executes the block a number of times.
 
 `endloop`

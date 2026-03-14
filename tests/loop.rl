@@ -10,10 +10,9 @@ endloop
 
 ! Loops can be nested. These loops will print the value of y three times, twice.
 define integer outerCount as 2
-define integer innerCount as 3
 
 loop outerCount
-    loop innerCount
+    loop 3
         print y
     endloop
 endloop

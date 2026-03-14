@@ -18,3 +18,5 @@ define integer y as 2
 ! Calculate 3^2 = 9
 call pow with (x, y) as result
 print result
+
+leave 0
