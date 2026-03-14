@@ -45,7 +45,7 @@ int tokenize(const char* input, Token tokens[], int cap) {
             if (buff[i] != '"') {
                 putError(lineNum);
                 fprintf(stderr, "Unterminated string literal.\n");
-                return -1;
+                exit(1);
             }
 
             int len = i - start;
@@ -61,12 +61,21 @@ int tokenize(const char* input, Token tokens[], int cap) {
         // number literals
         if (isdigit(buff[i])) {
             int start = i;
-            while (isdigit(buff[i])) {
+            int decimal = 0;
+            while (isdigit(buff[i]) || (buff[i] == '.' && !decimal)) {
+                if (buff[i] == '.') {
+                    if (!isdigit(buff[i + 1])) {
+                        putError(lineNum);
+                        fprintf(stderr, "Expected a number after '.'.\n");
+                        exit(1);
+                    }
+                    decimal = 1;
+                }
                 i++;
             }
             int len = i - start;
             if (n >= cap) return -1;
-            tokens[n].type = TOK_NUMBER;
+            tokens[n].type = decimal ? TOK_FLOAT : TOK_INTEGER;
             strncpy(tokens[n].value, &buff[start], len);
             tokens[n].value[len] = '\0';
             n++;
@@ -110,7 +119,7 @@ int tokenize(const char* input, Token tokens[], int cap) {
 
         putError(lineNum);
         fprintf(stderr, "Unexpected character '%c'.\n", buff[i]);
-        return -1;
+        exit(1);
 
     }
 
@@ -128,7 +137,7 @@ int isKeyword(const char* str) {
     static const char *kw[] = {
         "define", "redefine", "print", "input", "if", "endif", "leave",
         "loop", "endloop", "integer", "string", "as", "func", "endf", 
-        "call", "with", NULL
+        "call", "with", "float", NULL
     };
 
     for (int i = 0; kw[i]; ++i) {

@@ -26,7 +26,6 @@ typedef struct {
             struct Value* elements;
             int length;
         } arrayValue;
-        ASTNode* function;
     };
 } Value;
 

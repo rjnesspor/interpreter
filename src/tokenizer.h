@@ -11,7 +11,8 @@
 typedef enum {
     TOK_KEYWORD,
     TOK_IDENTIFIER,
-    TOK_NUMBER,
+    TOK_INTEGER,
+    TOK_FLOAT,
     TOK_STRING,
     TOK_PLUS,
     TOK_MINUS,

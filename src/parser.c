@@ -236,21 +236,26 @@ ASTNode* parseLeave() {
 // So, we are able to handle literals, variables, etc.
 ASTNode* parseAtom() {
     Token* curr = currentToken();
-    if (curr->type == TOK_NUMBER) {
+    if (curr->type == TOK_INTEGER) {
         ASTNode* node = createNode(AST_LITERAL);
-        strcpy(node->value, expectText(TOK_NUMBER));
+        strcpy(node->value, expectText(TOK_INTEGER));
         node->typeDesc = typeInt();
-        return node;
-    } else if (curr->type == TOK_IDENTIFIER) {
-        ASTNode* node = createNode(AST_VARIABLE);
-        strcpy(node->name, expectText(TOK_IDENTIFIER));
+        return node; 
+    } else if (curr->type == TOK_FLOAT) {
+        ASTNode* node = createNode(AST_LITERAL);
+        strcpy(node->value, expectText(TOK_FLOAT));
+        node->typeDesc = typeFloat();
         return node;
     } else if (curr->type == TOK_STRING) {
         ASTNode* node = createNode(AST_LITERAL);
         strcpy(node->value, expectText(TOK_STRING));
         node->typeDesc = typeString();
         return node;
-    }
+    } else if (curr->type == TOK_IDENTIFIER) {
+        ASTNode* node = createNode(AST_VARIABLE);
+        strcpy(node->name, expectText(TOK_IDENTIFIER));
+        return node;
+    } 
     putError(lineNum);
     fprintf(stderr, "Expected a value but got '%s'.\n", curr->value);
     exit(1);
@@ -293,7 +298,8 @@ const char* tokenTypeName(TokenType type) {
         case TOK_KEYWORD: return "keyword";
         case TOK_IDENTIFIER: return "identifier";
         case TOK_EOL: return "eol";
-        case TOK_NUMBER: return "number";
+        case TOK_INTEGER: return "integer";
+        case TOK_FLOAT: return "float";
         case TOK_PLUS: return "plus";
         case TOK_MINUS: return "minus";
         case TOK_MUL: return "mul";
