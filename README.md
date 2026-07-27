@@ -14,7 +14,7 @@ Data Types
 -
 - `integer`
 - `string`
-- ~~`float`~~ (Coming soon)
+- `float`
 
 Acceptable Directives 
 -
@@ -79,12 +79,13 @@ Many sample programs can be found in `/tests`, for your convenience. These aim t
 To-Do List
 -
 
+- Let print evaluate expressions (so you can do print x + y)
 - Allow for more than one binary operation per statement
 - Allow loop conditions similar to if statements
-- Allow for string concatenation with the + operator
+- ~~Allow for string concatenation with the + operator~~
 - ~~Add new data types/create a generic data type framework~~
   - Arrays (In progress)
-  - Floating point numbers (In progress)
+  - ~~Floating point numbers~~
 - ~~Allow for binary operations to be performed in define statements, to allow for declaring/defining a variable in one line~~
 - ~~Allow direct printing of string literals~~
 - ~~Type check parameters passed to functions to make sure they are correct~~

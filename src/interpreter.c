@@ -9,6 +9,20 @@ int functionCount = 0;
 CallFrame callStack[MAX_SCOPES];
 int callTop = -1;
 
+BinopRule binopRules[] = {
+    { TYPE_INT, TYPE_INT, '+', int_int_add },
+    { TYPE_INT, TYPE_INT, '-', int_int_sub },
+    { TYPE_INT, TYPE_INT, '*', int_int_mul },
+    { TYPE_INT, TYPE_INT, '/', int_int_div },
+    { TYPE_FLOAT, TYPE_FLOAT, '+', float_float_add },
+    { TYPE_FLOAT, TYPE_FLOAT, '-', float_float_sub },
+    { TYPE_FLOAT, TYPE_FLOAT, '*', float_float_mul },
+    { TYPE_FLOAT, TYPE_FLOAT, '/', float_float_div },
+    { TYPE_STRING, TYPE_STRING, '+', string_string_add }
+}; 
+
+int ruleCount = sizeof(binopRules) / sizeof(BinopRule);
+
 void pushCallFrame(ASTNode* function) {
     if (callTop + 1 >= MAX_SCOPES) {
         putRError(function->lineNum);
@@ -149,41 +163,17 @@ Value eval(ASTNode* node) {
         case AST_BINOP:
             Value left = eval(node->left);
             Value right = eval(node->right);
-            if (!typeEquals(left.typeDesc, typeInt()) || !typeEquals(right.typeDesc, typeInt())) {
-                putRError(node->lineNum);
-                fprintf(stderr, "Binary operation '%s' is undefined for operands '%s' and '%s'.\n", node->value, typeName(left.typeDesc), typeName(right.typeDesc));
-                exit(1);
+            char op = node->value[0];
+
+            for (int i = 0; i < ruleCount; i++) {
+                BinopRule* rule = &binopRules[i];
+                if (rule->left == left.typeDesc->base && rule->right == right.typeDesc->base && rule->op == op) {
+                    return rule->handler(left, right);
+                }
             }
-            Value result;
-            result.typeDesc = typeInt();
-            switch (node->value[0]) {
-                case '+':
-                    result.intValue = left.intValue + right.intValue;
-                    break;
-                case '-':
-                    result.intValue = left.intValue - right.intValue;
-                    break;
-                case '*':
-                    result.intValue = left.intValue * right.intValue;
-                    break;
-                case '/':
-                    result.intValue = left.intValue / right.intValue;
-                    break;
-                case '=':
-                    result.intValue = left.intValue == right.intValue;
-                    break;
-                case '>':
-                    result.intValue = left.intValue > right.intValue;
-                    break;
-                case '<':
-                    result.intValue = left.intValue < right.intValue;
-                    break;
-                default:
-                    putRError(node->lineNum);
-                    fprintf(stderr, "Unrecognized binary operator '%c'.\n", node->value[0]);
-                    exit(1);
-            }
-            return result;
+            putRError(node->lineNum);
+            fprintf(stderr, "Binary operation '%c' is undefined for types '%s' and '%s'.\n", op, typeName(left.typeDesc), typeName(right.typeDesc));
+            exit(1);
         default:
             printf("Something went wrong with node: %s", node->name);
             exit(1);
@@ -207,7 +197,11 @@ void execStatement(ASTNode* node) {
             } else if (typeEquals(printVal.typeDesc, typeString())) {
                 printf("%s\n", printVal.strValue);
             } else if (typeEquals(printVal.typeDesc, typeFloat())) {
-                printf("%f\n", printVal.floatValue);
+                printf("%g\n", printVal.floatValue);
+            } else {
+                putRError(node->lineNum);
+                fprintf(stderr, "Unknown type: %s.\n", typeName(printVal.typeDesc));
+                exit(1);
             }
             break;
         case AST_BLOCK:
@@ -292,8 +286,9 @@ void execStatement(ASTNode* node) {
             execStatement(funcBody);
 
             if (strlen(node->returnVar) > 0 && !callStack[callTop].hasReturned) {
-                putWarning(node->lineNum);
-                fprintf(stderr, "Function '%s' returned no value but assigns result to '%s'.\n", func->name, node->returnVar);
+                putRError(node->lineNum);
+                fprintf(stderr, "Function '%s' returned no value but attempts to assign result to '%s'.\n", func->name, node->returnVar);
+                exit(1);
             }
             Value returnValue = callStack[callTop].returnValue;
 
@@ -331,6 +326,7 @@ void execStatement(ASTNode* node) {
         case AST_LOOP:
             if (node->right) {
                 Value count = eval(node->right);
+                printf("found %s\n", typeName(count.typeDesc));
                 if (!typeEquals(count.typeDesc, typeInt())) {
                     putRError(node->lineNum);
                     printf("Loop count must be an integer, but encountered a(n) '%s'.\n", typeName(count.typeDesc));
@@ -384,4 +380,51 @@ bool isInt(const char* str) {
         str++;
     }
     return true;
+}
+
+Value int_int_add(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = left.intValue + right.intValue };
+    return v;
+}
+
+Value int_int_sub(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = left.intValue - right.intValue };
+    return v;
+}
+
+Value int_int_mul(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = left.intValue * right.intValue };
+    return v;
+}
+
+Value int_int_div(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = left.intValue / right.intValue };
+    return v;
+}
+
+Value float_float_add(Value left, Value right) {
+    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue + right.floatValue };
+    return v;
+}
+
+Value float_float_sub(Value left, Value right) {
+    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue - right.floatValue };
+    return v;
+}
+
+Value float_float_mul(Value left, Value right) {
+    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue * right.floatValue };
+    return v;
+}
+
+Value float_float_div(Value left, Value right) {
+    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue / right.floatValue };
+    return v;
+}
+
+Value string_string_add(Value left, Value right) {
+    Value v;
+    snprintf(v.strValue, sizeof(v.strValue), "%s%s", left.strValue, right.strValue);
+    v.typeDesc = typeString();
+    return v;
 }

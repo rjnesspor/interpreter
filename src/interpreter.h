@@ -21,7 +21,7 @@ typedef struct {
     union {
         int intValue;
         float floatValue;
-        char strValue[256];
+        char strValue[512];
         struct {
             struct Value* elements;
             int length;
@@ -49,6 +49,25 @@ typedef struct {
     Value returnValue;
     int hasReturned;
 } CallFrame;
+
+typedef Value (*BinopHandler)(Value left, Value right);
+
+typedef struct {
+    BaseType left;
+    BaseType right;
+    char op;
+    BinopHandler handler;
+} BinopRule;
+
+Value int_int_add(Value left, Value right);
+Value int_int_sub(Value left, Value right);
+Value int_int_mul(Value left, Value right);
+Value int_int_div(Value left, Value right);
+Value float_float_add(Value left, Value right);
+Value float_float_sub(Value left, Value right);
+Value float_float_mul(Value left, Value right);
+Value float_float_div(Value left, Value right);
+Value string_string_add(Value left, Value right);
 
 ASTNode* getFunction(const char* name);
 void defineFunction(ASTNode* node);
