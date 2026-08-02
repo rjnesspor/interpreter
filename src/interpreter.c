@@ -174,6 +174,47 @@ Value eval(ASTNode* node) {
             putRError(node->lineNum);
             fprintf(stderr, "Binary operation '%c' is undefined for types '%s' and '%s'.\n", op, typeName(left.typeDesc), typeName(right.typeDesc));
             exit(1);
+        case AST_LIST:
+            Value list;
+            list.arrayValue.length = node->childCount;
+            list.arrayValue.elements = malloc(sizeof(Value) * node->childCount);
+            TypeDesc* elemType = typeInt();
+            for (int i = 0; i < node->childCount; i++) {
+                Value elem = eval(node->children[i]);
+                if (i == 0) elemType = elem.typeDesc;
+                else if (!typeEquals(elem.typeDesc, elemType)) {
+                    putRError(node->lineNum);
+                    fprintf(stderr, "List elements must all be the same type.\n");
+                    exit(1);
+                }
+                list.arrayValue.elements[i] = elem;
+            }
+            list.typeDesc = typeList(elemType);
+            return list;
+        case AST_INDEX:
+            Value* listVar = lookupVariable(node->name);
+            if (!listVar) {
+                putRError(node->lineNum);
+                fprintf(stderr, "Variable '%s' is undefined.\n", node->name);
+                exit(1);
+            }
+            if (listVar->typeDesc->base != TYPE_LIST) {
+                putRError(node->lineNum);
+                fprintf(stderr, "'%s' is not a list.\n", node->name);
+                exit(1);
+            }
+            Value idxVal = eval(node->right);
+            if (idxVal.typeDesc->base != TYPE_INT) {
+                putRError(node->lineNum);
+                fprintf(stderr, "List index must be an integer.\n");
+                exit(1);
+            }
+            if (idxVal.intValue < 0 || idxVal.intValue >= listVar->arrayValue.length) {
+                putRError(node->lineNum);
+                fprintf(stderr, "List index %d out of bounds for '%s' (length %d).\n", idxVal.intValue, node->name, listVar->arrayValue.length);
+                exit(1);
+            }
+            return listVar->arrayValue.elements[idxVal.intValue];
         default:
             printf("Something went wrong with node: %s", node->name);
             exit(1);
@@ -187,6 +228,38 @@ void execStatement(ASTNode* node) {
             defineVariable(node->name, node->typeDesc, defineValue);
             break;
         case AST_REDEFINE:
+            if (node->left) {
+                Value* redefList = lookupVariable(node->name);
+                if (!redefList) {
+                    putRError(node->lineNum);
+                    fprintf(stderr, "'%s' is undefined.\n", node->name);
+                    exit(1);
+                }
+                if (redefList->typeDesc->base != TYPE_LIST) {
+                    putRError(node->lineNum);
+                    fprintf(stderr, "'%s' is not a list.\n", node->name);
+                    exit(1);
+                }
+                Value redefIdx = eval(node->left);
+                if (redefIdx.typeDesc->base != TYPE_INT) {
+                    putRError(node->lineNum);
+                    fprintf(stderr, "List index must be an integer.\n");
+                    exit(1);
+                }
+                if (redefIdx.intValue < 0 || redefIdx.intValue >= redefList->arrayValue.length) {
+                    putRError(node->lineNum);
+                    fprintf(stderr, "List index %d out of bounds for '%s' (length %d).\n", redefIdx.intValue, node->name, redefList->arrayValue.length);
+                    exit(1);
+                }
+                Value redefElem = eval(node->right);
+                if (!typeEquals(redefElem.typeDesc, redefList->typeDesc->elementType)) {
+                    putRError(node->lineNum);
+                    fprintf(stderr, "Type mismatch: cannot assign '%s' value into list '%s' of '%s'.\n", typeName(redefElem.typeDesc), node->name, typeName(redefList->typeDesc->elementType));
+                    exit(1);
+                }
+                redefList->arrayValue.elements[redefIdx.intValue] = redefElem;
+                break;
+            }
             Value redefValue = eval(node->right);
             setVariable(node->name, redefValue);
             break;
@@ -368,6 +441,8 @@ const char *nodename(ASTNodeType t) {
         case AST_LITERAL:   return "LITERAL";
         case AST_VARIABLE:  return "VARIABLE";
         case AST_BINOP:     return "BINOP";
+        case AST_LIST:      return "LIST";
+        case AST_INDEX:     return "INDEX";
         default:            return "??";
     }
 }

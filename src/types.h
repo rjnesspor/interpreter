@@ -5,7 +5,7 @@ typedef enum {
     TYPE_INT,
     TYPE_FLOAT,
     TYPE_STRING,
-    TYPE_ARRAY,
+    TYPE_LIST,
     TYPE_FUNCTION,
     TYPE_VOID
 } BaseType;
@@ -20,7 +20,7 @@ TypeDesc* typeString();
 TypeDesc* typeFloat();
 TypeDesc* typeFunction();
 TypeDesc* typeVoid();
-TypeDesc* typeArray(TypeDesc* elementType);
+TypeDesc* typeList(TypeDesc* elementType);
 
 const char* typeName(TypeDesc* t);
 int typeEquals(TypeDesc* a, TypeDesc* b);

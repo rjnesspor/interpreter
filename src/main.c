@@ -100,8 +100,11 @@ void print_ast(const ASTNode *node, int depth) {
 
     switch (node->type) {
         case AST_DEFINE:
-        case AST_REDEFINE:
             printf(" %s %s %s", typeName(node->typeDesc), node->name, node->value);
+            break;
+
+        case AST_REDEFINE:
+            printf(" %s %s", node->name, node->value);
             break;
 
         case AST_FUNCTION:
@@ -109,6 +112,7 @@ void print_ast(const ASTNode *node, int depth) {
             break;
 
         case AST_VARIABLE:
+        case AST_INDEX:
             printf("%s", node->name);
             break;
 
@@ -189,6 +193,8 @@ const char *node_type_name(ASTNodeType t) {
         case AST_BINOP:     return "BINOP";
         case AST_FUNCTION:  return "FUNCTION";
         case AST_CALL:       return "FCALL";
+        case AST_LIST:       return "LIST";
+        case AST_INDEX:      return "INDEX";
         default:            return "??";
     }
 }

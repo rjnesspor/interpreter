@@ -1,0 +1,15 @@
+! This program demonstrates the functionality
+! and syntax of lists.
+
+define list of integer myList as [1, 2, 3]
+
+! List fields are accessed the same way as most common languages.
+print myList[1]
+
+! Set list fields using the redefine keyword.
+redefine myList[0] as 17
+print myList[0]
+
+! Lists do not automatically resize. The size is determined 
+! when they are defined.
+! redefine myList[3] as 4 ! <- Runtime Error, index out of bounds

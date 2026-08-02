@@ -16,7 +16,7 @@
 #define MAX_FUNCTIONS 32
 #define MAX_PARAMS 8
 
-typedef struct {
+typedef struct Value {
     TypeDesc* typeDesc;
     union {
         int intValue;

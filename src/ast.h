@@ -18,7 +18,9 @@ typedef enum {
     AST_VARIABLE,
     AST_BINOP,
     AST_FUNCTION,
-    AST_CALL
+    AST_CALL,
+    AST_LIST,
+    AST_INDEX
 } ASTNodeType;
 
 typedef struct ASTNode {

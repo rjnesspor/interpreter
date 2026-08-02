@@ -100,10 +100,17 @@ ASTNode* parseDefine() {
 ASTNode* parseRedefine() {
     expect(TOK_KEYWORD, "redefine");
     char* name = expectText(TOK_IDENTIFIER);
-    expect(TOK_KEYWORD, "as");
 
     ASTNode* node = createNode(AST_REDEFINE);
     strcpy(node->name, name);
+
+    if (match(TOK_LBRACKET, "[")) {
+        advance();
+        node->left = parseExpression();
+        expect(TOK_RBRACKET, "]");
+    }
+
+    expect(TOK_KEYWORD, "as");
     node->right = parseExpression();
 
     return node;
@@ -252,10 +259,28 @@ ASTNode* parseAtom() {
         node->typeDesc = typeString();
         return node;
     } else if (curr->type == TOK_IDENTIFIER) {
+        char* name = expectText(TOK_IDENTIFIER);
+        if (match(TOK_LBRACKET, "[")) {
+            advance();
+            ASTNode* node = createNode(AST_INDEX);
+            strcpy(node->name, name);
+            node->right = parseExpression();
+            expect(TOK_RBRACKET, "]");
+            return node;
+        }
         ASTNode* node = createNode(AST_VARIABLE);
-        strcpy(node->name, expectText(TOK_IDENTIFIER));
+        strcpy(node->name, name);
         return node;
-    } 
+    } else if (curr->type == TOK_LBRACKET) {
+        advance();
+        ASTNode* node = createNode(AST_LIST);
+        while (pos < tokenCount && !(match(TOK_RBRACKET, "]"))) {
+            addChild(node, parseExpression());
+            if (match(TOK_COMMA, ",")) advance();
+        }
+        expect(TOK_RBRACKET, "]");
+        return node;
+    }
     putError(lineNum);
     fprintf(stderr, "Expected a value but got '%s'.\n", curr->value);
     exit(1);
@@ -308,6 +333,8 @@ const char* tokenTypeName(TokenType type) {
         case TOK_LPAREN: return "left paren";
         case TOK_RPAREN: return "right paren";
         case TOK_COMMA: return "comma";
+        case TOK_LBRACKET: return "left bracket";
+        case TOK_RBRACKET: return "right bracket";
         default: return "unknown";
     }
 }
@@ -370,6 +397,11 @@ TypeDesc* parseTypeKeyword() {
     if (match(TOK_KEYWORD, "func")) {
         advance();
         return typeFunction();
+    }
+    if (match(TOK_KEYWORD, "list")) {
+        advance();
+        expect(TOK_KEYWORD, "of");
+        return typeList(parseTypeKeyword());
     }
     putError(lineNum);
     fprintf(stderr, "Expected a type keyword but got '%s'.\n", currentToken()->value);

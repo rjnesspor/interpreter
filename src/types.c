@@ -29,9 +29,9 @@ TypeDesc* typeFunction() {
     return &_function;
 }
 
-TypeDesc* typeArray(TypeDesc* elementType) {
+TypeDesc* typeList(TypeDesc* elementType) {
     TypeDesc* t = malloc(sizeof(TypeDesc));
-    t->base = TYPE_ARRAY;
+    t->base = TYPE_LIST;
     t->elementType = elementType;
     return t;
 }
@@ -41,7 +41,7 @@ const char* typeName(TypeDesc* t) {
         case TYPE_INT: return "integer";
         case TYPE_FLOAT: return "float";
         case TYPE_STRING: return "string";
-        case TYPE_ARRAY: return "array";
+        case TYPE_LIST: return "list";
         case TYPE_VOID: return "void";
         case TYPE_FUNCTION: return "function";
         default: return "unknown";
@@ -50,6 +50,6 @@ const char* typeName(TypeDesc* t) {
 
 int typeEquals(TypeDesc* a, TypeDesc* b) {
     if (a->base != b->base) return 0;
-    if (a->base == TYPE_ARRAY) return typeEquals(a->elementType, b->elementType);
+    if (a->base == TYPE_LIST) return typeEquals(a->elementType, b->elementType);
     return 1;
 }
