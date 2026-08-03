@@ -134,6 +134,7 @@ ASTNode* parseExpression() {
           currentToken()->type == TOK_MINUS ||
           currentToken()->type == TOK_MUL   ||
           currentToken()->type == TOK_DIV   ||
+          currentToken()->type == TOK_MOD   ||
           currentToken()->type == TOK_GT    ||
           currentToken()->type == TOK_LT    ||
           currentToken()->type == TOK_EQ)) {
@@ -259,6 +260,8 @@ ASTNode* parseAtom() {
         node->typeDesc = typeString();
         return node;
     } else if (curr->type == TOK_IDENTIFIER) {
+        // Handles regular variables and index variables
+        // e.g. myInt vs myList[1]
         char* name = expectText(TOK_IDENTIFIER);
         if (match(TOK_LBRACKET, "[")) {
             advance();
@@ -272,6 +275,8 @@ ASTNode* parseAtom() {
         strcpy(node->name, name);
         return node;
     } else if (curr->type == TOK_LBRACKET) {
+        // Handles list literals
+        // e.g. [1, 2, 3]
         advance();
         ASTNode* node = createNode(AST_LIST);
         while (pos < tokenCount && !(match(TOK_RBRACKET, "]"))) {

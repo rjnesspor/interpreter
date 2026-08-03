@@ -38,7 +38,7 @@ int tokenize(const char* input, Token tokens[], int cap) {
         if (buff[i] == '"') {
             i++;
             int start = i;
-            while (buff[i] && buff[i] != '"' && buff[i]  != '\n') {
+            while (buff[i] && buff[i] != '"' && buff[i] != '\n') {
                 i++;
             }
 
@@ -98,12 +98,13 @@ int tokenize(const char* input, Token tokens[], int cap) {
         }
 
         // operators
-        if (strchr("+-*/><=(),[]", buff[i])) {
+        if (strchr("+-*/><=(),[]%", buff[i])) {
             if (n >= cap) return -1;
             if (buff[i] == '+') tokens[n].type = TOK_PLUS;
             if (buff[i] == '-') tokens[n].type = TOK_MINUS;
             if (buff[i] == '*') tokens[n].type = TOK_MUL;
             if (buff[i] == '/') tokens[n].type = TOK_DIV;
+            if (buff[i] == '%') tokens[n].type = TOK_MOD;
             if (buff[i] == '>') tokens[n].type = TOK_GT;
             if (buff[i] == '<') tokens[n].type = TOK_LT;
             if (buff[i] == '=') tokens[n].type = TOK_EQ;

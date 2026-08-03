@@ -14,12 +14,22 @@ BinopRule binopRules[] = {
     { TYPE_INT, TYPE_INT, '-', int_int_sub },
     { TYPE_INT, TYPE_INT, '*', int_int_mul },
     { TYPE_INT, TYPE_INT, '/', int_int_div },
+    { TYPE_INT, TYPE_INT, '%', int_int_mod },
+    { TYPE_INT, TYPE_INT, '=', int_int_eq },
+    { TYPE_INT, TYPE_INT, '<', int_int_lt },
+    { TYPE_INT, TYPE_INT, '>', int_int_gt },
     { TYPE_FLOAT, TYPE_FLOAT, '+', float_float_add },
     { TYPE_FLOAT, TYPE_FLOAT, '-', float_float_sub },
     { TYPE_FLOAT, TYPE_FLOAT, '*', float_float_mul },
     { TYPE_FLOAT, TYPE_FLOAT, '/', float_float_div },
-    { TYPE_STRING, TYPE_STRING, '+', string_string_add }
-}; 
+    { TYPE_FLOAT, TYPE_FLOAT, '=', float_float_eq },
+    { TYPE_FLOAT, TYPE_FLOAT, '<', float_float_lt },
+    { TYPE_FLOAT, TYPE_FLOAT, '>', float_float_gt },
+    { TYPE_STRING, TYPE_STRING, '+', string_string_add },
+    { TYPE_STRING, TYPE_STRING, '=', string_string_eq },
+    { TYPE_STRING, TYPE_STRING, '<', string_string_lt },
+    { TYPE_STRING, TYPE_STRING, '>', string_string_gt },
+};
 
 int ruleCount = sizeof(binopRules) / sizeof(BinopRule);
 
@@ -399,7 +409,6 @@ void execStatement(ASTNode* node) {
         case AST_LOOP:
             if (node->right) {
                 Value count = eval(node->right);
-                printf("found %s\n", typeName(count.typeDesc));
                 if (!typeEquals(count.typeDesc, typeInt())) {
                     putRError(node->lineNum);
                     printf("Loop count must be an integer, but encountered a(n) '%s'.\n", typeName(count.typeDesc));
@@ -457,49 +466,60 @@ bool isInt(const char* str) {
     return true;
 }
 
-Value int_int_add(Value left, Value right) {
-    Value v = { .typeDesc = typeInt(), .intValue = left.intValue + right.intValue };
-    return v;
-}
+#define ARITH_BINOP(NAME, FIELD, TYPEFN, OP) \
+    Value NAME(Value left, Value right) { \
+        Value v; \
+        v.typeDesc = TYPEFN(); \
+        v.FIELD = left.FIELD OP right.FIELD; \
+        return v; \
+    }
 
-Value int_int_sub(Value left, Value right) {
-    Value v = { .typeDesc = typeInt(), .intValue = left.intValue - right.intValue };
-    return v;
-}
+#define CMP_BINOP(NAME, FIELD, OP) \
+    Value NAME(Value left, Value right) { \
+        Value v; \
+        v.typeDesc = typeInt(); \
+        v.intValue = left.FIELD OP right.FIELD; \
+        return v; \
+    }
 
-Value int_int_mul(Value left, Value right) {
-    Value v = { .typeDesc = typeInt(), .intValue = left.intValue * right.intValue };
-    return v;
-}
+ARITH_BINOP(int_int_add, intValue, typeInt, +)
+ARITH_BINOP(int_int_sub, intValue, typeInt, -)
+ARITH_BINOP(int_int_mul, intValue, typeInt, *)
+ARITH_BINOP(int_int_div, intValue, typeInt, /)
+ARITH_BINOP(int_int_mod, intValue, typeInt, %)
+CMP_BINOP(int_int_eq, intValue, ==)
+CMP_BINOP(int_int_lt, intValue, <)
+CMP_BINOP(int_int_gt, intValue, >)
 
-Value int_int_div(Value left, Value right) {
-    Value v = { .typeDesc = typeInt(), .intValue = left.intValue / right.intValue };
-    return v;
-}
+ARITH_BINOP(float_float_add, floatValue, typeFloat, +)
+ARITH_BINOP(float_float_sub, floatValue, typeFloat, -)
+ARITH_BINOP(float_float_mul, floatValue, typeFloat, *)
+ARITH_BINOP(float_float_div, floatValue, typeFloat, /)
+CMP_BINOP(float_float_eq, floatValue, ==)
+CMP_BINOP(float_float_lt, floatValue, <)
+CMP_BINOP(float_float_gt, floatValue, >)
 
-Value float_float_add(Value left, Value right) {
-    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue + right.floatValue };
-    return v;
-}
-
-Value float_float_sub(Value left, Value right) {
-    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue - right.floatValue };
-    return v;
-}
-
-Value float_float_mul(Value left, Value right) {
-    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue * right.floatValue };
-    return v;
-}
-
-Value float_float_div(Value left, Value right) {
-    Value v = { .typeDesc = typeFloat(), .floatValue = left.floatValue / right.floatValue };
-    return v;
-}
+#undef ARITH_BINOP
+#undef CMP_BINOP
 
 Value string_string_add(Value left, Value right) {
     Value v;
     snprintf(v.strValue, sizeof(v.strValue), "%s%s", left.strValue, right.strValue);
     v.typeDesc = typeString();
+    return v;
+}
+
+Value string_string_eq(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = !strcmp(left.strValue, right.strValue) };
+    return v;
+}
+
+Value string_string_lt(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = strcmp(left.strValue, right.strValue) < 0 };
+    return v;
+}
+
+Value string_string_gt(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = strcmp(left.strValue, right.strValue) > 0 };
     return v;
 }
