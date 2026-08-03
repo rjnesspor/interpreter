@@ -6,16 +6,24 @@ define integer myInput as 0
 print "Please enter a number:"
 input integer as myInput
 
+if myInput != 3
+    print "Your number is not 3!"
+endif
+
+if myInput <= 10
+    print "Your number is less than (or equal) to 10!"
+endif
+
 if myInput = 5
-    print "Your number was exactly 5!"
+    print "Your number is exactly 5!"
 endif
 
 if myInput > 5
-    print "Your number was greater than 5!"
+    print "Your number is greater than 5!"
 endif
 
 if myInput < 5
-    print "Your number was less than 5!"
+    print "Your number is less than 5!"
 endif
 
 leave 0
