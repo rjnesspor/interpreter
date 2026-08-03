@@ -10,25 +10,32 @@ CallFrame callStack[MAX_SCOPES];
 int callTop = -1;
 
 BinopRule binopRules[] = {
-    { TYPE_INT, TYPE_INT, '+', int_int_add },
-    { TYPE_INT, TYPE_INT, '-', int_int_sub },
-    { TYPE_INT, TYPE_INT, '*', int_int_mul },
-    { TYPE_INT, TYPE_INT, '/', int_int_div },
-    { TYPE_INT, TYPE_INT, '%', int_int_mod },
-    { TYPE_INT, TYPE_INT, '=', int_int_eq },
-    { TYPE_INT, TYPE_INT, '<', int_int_lt },
-    { TYPE_INT, TYPE_INT, '>', int_int_gt },
-    { TYPE_FLOAT, TYPE_FLOAT, '+', float_float_add },
-    { TYPE_FLOAT, TYPE_FLOAT, '-', float_float_sub },
-    { TYPE_FLOAT, TYPE_FLOAT, '*', float_float_mul },
-    { TYPE_FLOAT, TYPE_FLOAT, '/', float_float_div },
-    { TYPE_FLOAT, TYPE_FLOAT, '=', float_float_eq },
-    { TYPE_FLOAT, TYPE_FLOAT, '<', float_float_lt },
-    { TYPE_FLOAT, TYPE_FLOAT, '>', float_float_gt },
-    { TYPE_STRING, TYPE_STRING, '+', string_string_add },
-    { TYPE_STRING, TYPE_STRING, '=', string_string_eq },
-    { TYPE_STRING, TYPE_STRING, '<', string_string_lt },
-    { TYPE_STRING, TYPE_STRING, '>', string_string_gt },
+    { TYPE_INT, TYPE_INT, "+", int_int_add },
+    { TYPE_INT, TYPE_INT, "-", int_int_sub },
+    { TYPE_INT, TYPE_INT, "*", int_int_mul },
+    { TYPE_INT, TYPE_INT, "/", int_int_div },
+    { TYPE_INT, TYPE_INT, "%", int_int_mod },
+    { TYPE_INT, TYPE_INT, "=", int_int_eq },
+    { TYPE_INT, TYPE_INT, "<", int_int_lt },
+    { TYPE_INT, TYPE_INT, ">", int_int_gt },
+    { TYPE_INT, TYPE_INT, ">=", int_int_gte },
+    { TYPE_INT, TYPE_INT, "<=", int_int_lte },
+    { TYPE_INT, TYPE_INT, "!=", int_int_neq },
+    { TYPE_FLOAT, TYPE_FLOAT, "+", float_float_add },
+    { TYPE_FLOAT, TYPE_FLOAT, "-", float_float_sub },
+    { TYPE_FLOAT, TYPE_FLOAT, "*", float_float_mul },
+    { TYPE_FLOAT, TYPE_FLOAT, "/", float_float_div },
+    { TYPE_FLOAT, TYPE_FLOAT, "=", float_float_eq },
+    { TYPE_FLOAT, TYPE_FLOAT, "<", float_float_lt },
+    { TYPE_FLOAT, TYPE_FLOAT, ">", float_float_gt },
+    { TYPE_FLOAT, TYPE_FLOAT, ">=", float_float_gte },
+    { TYPE_FLOAT, TYPE_FLOAT, "<=", float_float_lte },
+    { TYPE_FLOAT, TYPE_FLOAT, "!=", float_float_neq },
+    { TYPE_STRING, TYPE_STRING, "+", string_string_add },
+    { TYPE_STRING, TYPE_STRING, "=", string_string_eq },
+    { TYPE_STRING, TYPE_STRING, "!=", string_string_neq },
+    { TYPE_STRING, TYPE_STRING, "<", string_string_lt },
+    { TYPE_STRING, TYPE_STRING, ">", string_string_gt },
 };
 
 int ruleCount = sizeof(binopRules) / sizeof(BinopRule);
@@ -173,16 +180,16 @@ Value eval(ASTNode* node) {
         case AST_BINOP:
             Value left = eval(node->left);
             Value right = eval(node->right);
-            char op = node->value[0];
+            char* op = node->value;
 
             for (int i = 0; i < ruleCount; i++) {
                 BinopRule* rule = &binopRules[i];
-                if (rule->left == left.typeDesc->base && rule->right == right.typeDesc->base && rule->op == op) {
+                if (rule->left == left.typeDesc->base && rule->right == right.typeDesc->base && strcmp(rule->op, op) == 0) {
                     return rule->handler(left, right);
                 }
             }
             putRError(node->lineNum);
-            fprintf(stderr, "Binary operation '%c' is undefined for types '%s' and '%s'.\n", op, typeName(left.typeDesc), typeName(right.typeDesc));
+            fprintf(stderr, "Binary operation '%s' is undefined for types '%s' and '%s'.\n", op, typeName(left.typeDesc), typeName(right.typeDesc));
             exit(1);
         case AST_LIST:
             Value list;
@@ -488,16 +495,22 @@ ARITH_BINOP(int_int_mul, intValue, typeInt, *)
 ARITH_BINOP(int_int_div, intValue, typeInt, /)
 ARITH_BINOP(int_int_mod, intValue, typeInt, %)
 CMP_BINOP(int_int_eq, intValue, ==)
+CMP_BINOP(int_int_neq, intValue, !=)
 CMP_BINOP(int_int_lt, intValue, <)
 CMP_BINOP(int_int_gt, intValue, >)
+CMP_BINOP(int_int_gte, intValue, >=)
+CMP_BINOP(int_int_lte, intValue, <=)
 
 ARITH_BINOP(float_float_add, floatValue, typeFloat, +)
 ARITH_BINOP(float_float_sub, floatValue, typeFloat, -)
 ARITH_BINOP(float_float_mul, floatValue, typeFloat, *)
 ARITH_BINOP(float_float_div, floatValue, typeFloat, /)
 CMP_BINOP(float_float_eq, floatValue, ==)
+CMP_BINOP(float_float_neq, floatValue, !=)
 CMP_BINOP(float_float_lt, floatValue, <)
 CMP_BINOP(float_float_gt, floatValue, >)
+CMP_BINOP(float_float_gte, floatValue, >=)
+CMP_BINOP(float_float_lte, floatValue, <=)
 
 #undef ARITH_BINOP
 #undef CMP_BINOP
@@ -511,6 +524,11 @@ Value string_string_add(Value left, Value right) {
 
 Value string_string_eq(Value left, Value right) {
     Value v = { .typeDesc = typeInt(), .intValue = !strcmp(left.strValue, right.strValue) };
+    return v;
+}
+
+Value string_string_neq(Value left, Value right) {
+    Value v = { .typeDesc = typeInt(), .intValue = strcmp(left.strValue, right.strValue) != 0 };
     return v;
 }
 

@@ -135,6 +135,9 @@ ASTNode* parseExpression() {
           currentToken()->type == TOK_MUL   ||
           currentToken()->type == TOK_DIV   ||
           currentToken()->type == TOK_MOD   ||
+          currentToken()->type == TOK_GTE   ||
+          currentToken()->type == TOK_LTE   ||
+          currentToken()->type == TOK_NEQ   ||
           currentToken()->type == TOK_GT    ||
           currentToken()->type == TOK_LT    ||
           currentToken()->type == TOK_EQ)) {
@@ -334,6 +337,12 @@ const char* tokenTypeName(TokenType type) {
         case TOK_MINUS: return "minus";
         case TOK_MUL: return "mul";
         case TOK_DIV: return "div";
+        case TOK_EQ: return "equals";
+        case TOK_NEQ: return "not equals";
+        case TOK_LT: return "less than";
+        case TOK_GT: return "greater than";
+        case TOK_GTE: return "greater than or equal to";
+        case TOK_LTE: return "less than or equal to";
         case TOK_STRING: return "string";
         case TOK_LPAREN: return "left paren";
         case TOK_RPAREN: return "right paren";

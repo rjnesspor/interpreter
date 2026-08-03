@@ -55,7 +55,7 @@ typedef Value (*BinopHandler)(Value left, Value right);
 typedef struct {
     BaseType left;
     BaseType right;
-    char op;
+    char op[3];
     BinopHandler handler;
 } BinopRule;
 
@@ -67,6 +67,9 @@ Value int_int_mod(Value left, Value right);
 Value int_int_eq(Value left, Value right);
 Value int_int_lt(Value left, Value right);
 Value int_int_gt(Value left, Value right);
+Value int_int_neq(Value left, Value right);
+Value int_int_lte(Value left, Value right);
+Value int_int_gte(Value left, Value right);
 Value float_float_add(Value left, Value right);
 Value float_float_sub(Value left, Value right);
 Value float_float_mul(Value left, Value right);
@@ -74,8 +77,12 @@ Value float_float_div(Value left, Value right);
 Value float_float_eq(Value left, Value right);
 Value float_float_lt(Value left, Value right);
 Value float_float_gt(Value left, Value right);
+Value float_float_neq(Value left, Value right);
+Value float_float_lte(Value left, Value right);
+Value float_float_gte(Value left, Value right);
 Value string_string_add(Value left, Value right);
 Value string_string_eq(Value left, Value right);
+Value string_string_neq(Value left, Value right);
 Value string_string_lt(Value left, Value right);
 Value string_string_gt(Value left, Value right);
 

@@ -26,7 +26,7 @@ int tokenize(const char* input, Token tokens[], int cap) {
         }
 
         // comments, skip them
-        if (buff[i] == '!') {
+        if (buff[i] == '?') {
             i++;
             while (buff[i] && buff[i] != '\n') {
                 i++;
@@ -98,25 +98,51 @@ int tokenize(const char* input, Token tokens[], int cap) {
         }
 
         // operators
-        if (strchr("+-*/><=(),[]%", buff[i])) {
+        if (strchr("+-*/><=(),[]%!", buff[i])) {
             if (n >= cap) return -1;
+            int start = i; // start of lexeme
+            int len = 1;
             if (buff[i] == '+') tokens[n].type = TOK_PLUS;
-            if (buff[i] == '-') tokens[n].type = TOK_MINUS;
-            if (buff[i] == '*') tokens[n].type = TOK_MUL;
-            if (buff[i] == '/') tokens[n].type = TOK_DIV;
-            if (buff[i] == '%') tokens[n].type = TOK_MOD;
-            if (buff[i] == '>') tokens[n].type = TOK_GT;
-            if (buff[i] == '<') tokens[n].type = TOK_LT;
-            if (buff[i] == '=') tokens[n].type = TOK_EQ;
-            if (buff[i] == '(') tokens[n].type = TOK_LPAREN;
-            if (buff[i] == ')') tokens[n].type = TOK_RPAREN;
-            if (buff[i] == ',') tokens[n].type = TOK_COMMA;
-            if (buff[i] == '[') tokens[n].type = TOK_LBRACKET;
-            if (buff[i] == ']') tokens[n].type = TOK_RBRACKET;
-            tokens[n].value[0] = buff[i];
-            tokens[n].value[1] = '\0';
+            else if (buff[i] == '-') tokens[n].type = TOK_MINUS;
+            else if (buff[i] == '*') tokens[n].type = TOK_MUL;
+            else if (buff[i] == '/') tokens[n].type = TOK_DIV;
+            else if (buff[i] == '%') tokens[n].type = TOK_MOD;
+            else if (buff[i] == '>') { // peek ahead to see if it is any of our 2 character ops
+                if (buff[i + 1] && buff[i + 1] == '=') {
+                    tokens[n].type = TOK_GTE;
+                    len = 2;
+                } else {
+                    tokens[n].type = TOK_GT;
+                }
+            }
+            else if (buff[i] == '<') {
+                if (buff[i + 1] && buff[i + 1] == '=') {
+                    tokens[n].type = TOK_LTE;
+                    len = 2;
+                } else {
+                    tokens[n].type = TOK_LT;
+                }
+            }
+            else if (buff[i] == '!') {
+                if (buff[i + 1] && buff[i + 1] == '=') {
+                    tokens[n].type = TOK_NEQ;
+                    len = 2;
+                } else {
+                    putError(lineNum);
+                    fprintf(stderr, "Unexpected character '%c'.\n", buff[i]);
+                    exit(1);
+                }
+            }
+            else if (buff[i] == '=') tokens[n].type = TOK_EQ;
+            else if (buff[i] == '(') tokens[n].type = TOK_LPAREN;
+            else if (buff[i] == ')') tokens[n].type = TOK_RPAREN;
+            else if (buff[i] == ',') tokens[n].type = TOK_COMMA;
+            else if (buff[i] == '[') tokens[n].type = TOK_LBRACKET;
+            else if (buff[i] == ']') tokens[n].type = TOK_RBRACKET;
+            strncpy(tokens[n].value, &buff[start], len);
+            tokens[n].value[len] = '\0';
             n++;
-            i++;
+            i += len;
             continue;
         }
 

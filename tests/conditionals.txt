@@ -1,5 +1,5 @@
-! This program shows the basic syntax of conditional 
-! statements and handling logic.
+? This program shows the basic syntax of conditional 
+? statements and handling logic.
 
 define integer myInput as 0
 

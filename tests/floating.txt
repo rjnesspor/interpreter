@@ -1,5 +1,5 @@
-! This program demonstrates the use of floating
-! point numbers. Floats are used the same way as integers.
+? This program demonstrates the use of floating
+? point numbers. Floats are used the same way as integers.
 
 define float x as 5.12
 define float y as 2.89
