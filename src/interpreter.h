@@ -10,8 +10,8 @@
 #include "types.h"
 #include "utils.h"
 
-#define MAX_VARIABLES 128
-#define MAX_SCOPES 32
+#define MAX_VARIABLES 64
+#define MAX_SCOPES 64
 #define GLOBAL_SCOPE_INDEX 0
 #define MAX_FUNCTIONS 32
 #define MAX_PARAMS 8
