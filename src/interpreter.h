@@ -48,6 +48,7 @@ typedef struct {
     ASTNode* function;
     Value returnValue;
     int hasReturned;
+    int scopeBase;
 } CallFrame;
 
 typedef Value (*BinopHandler)(Value left, Value right);

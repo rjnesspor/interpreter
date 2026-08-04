@@ -1,0 +1,20 @@
+? This program demonstrates recursion.
+
+define func factorial with (integer num)
+    if num <= 1
+        leave 1
+    endif
+    
+    if num > 1
+        define integer n1 as num - 1
+        call factorial with (n1) as calc1
+        define integer calc2 as num * calc1
+        leave calc2
+    endif
+endf
+
+define integer n as 5
+call factorial with (n) as result
+print result
+
+leave 0

@@ -36,3 +36,5 @@ endf
 
 define integer count as 16
 call fizzBuzz with (count)
+
+leave 0

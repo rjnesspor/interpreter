@@ -49,6 +49,7 @@ void pushCallFrame(ASTNode* function) {
     callTop++;
     callStack[callTop].function = function;
     callStack[callTop].hasReturned = 0;
+    callStack[callTop].scopeBase = scopeTop;
 }
 
 void popCallFrame() {
@@ -110,10 +111,22 @@ void popScope() {
 }
 
 Value* lookupVariable(const char* name) {
-    for (int i = scopeTop; i >= 0; i--) {
+    // Floor refers to which scope was in effect when this call frame
+    // was pushed, so that we do not traverse into scopes from other (recursive)
+    // function calls, and still traverse the global scope
+    int floor = (callTop >= 0) ? callStack[callTop].scopeBase : 0;
+    for (int i = scopeTop; i >= floor; i--) {
         for (int j = 0; j < scopes[i].count; j++) {
             if (strcmp(scopes[i].vars[j].name, name) == 0) {
                 return &scopes[i].vars[j].value;
+            }
+        }
+    }
+    // Still traverse the global scope
+    if (floor > 0) {
+        for (int j = 0; j < scopes[0].count; j++) {
+            if (strcmp(scopes[0].vars[j].name, name) == 0) {
+                return &scopes[0].vars[j].value;
             }
         }
     }
@@ -365,12 +378,19 @@ void execStatement(ASTNode* node) {
                 exit(1);
             }
 
+            // evaluate the arguments before we enter the new scope
+            // since the call base will stop us from evaluating them after
+            // it is pushed
+            Value argValues[MAX_PARAMS];
+            for (int i = 0; i < func->paramCount; i++) {
+                argValues[i] = eval(args[i]);
+            }
+
             pushScope();
             pushCallFrame(func);
 
             for (int i = 0; i < func->paramCount; i++) {
-                Value val = eval(args[i]);
-                defineVariable(params[i]->name, params[i]->typeDesc, val);
+                defineVariable(params[i]->name, params[i]->typeDesc, argValues[i]);
             }
 
             execStatement(funcBody);
