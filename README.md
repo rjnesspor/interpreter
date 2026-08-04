@@ -65,7 +65,7 @@ Syntax
 `loop {integer literal|name}`
 - Executes the block a number of times.
 
-`endloop`
+`endl`
 - Signifies the end of a loop block.
 
 List Syntax
@@ -93,7 +93,9 @@ To-Do List
 
 - Let print evaluate expressions (so you can do print x + y)
 - Allow for more than one binary operation per statement
-- Allow loop conditions similar to if statements
+  - Add `and`, `or`, and `not` to be used in if statements
+- Add loop conditions
+- Add bitwise operations
 - Ability to pass literals to functions
 - Built-in list functions (append, remove, length)
 - ~~Allow for string concatenation with the + operator~~

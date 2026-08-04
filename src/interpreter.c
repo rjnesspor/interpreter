@@ -401,8 +401,8 @@ void execStatement(ASTNode* node) {
                 // inside a function, so we want to return a value
                 if (node->right) {
                     frame->returnValue = eval(node->right);
-                    frame->hasReturned = 1;
                 }
+                frame->hasReturned = 1;
             } else {
                 // not inside a function, exit accordingly
                 int integerStatus = 0;

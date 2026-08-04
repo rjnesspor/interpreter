@@ -5,7 +5,7 @@
 #include "tokenizer.h"
 #include "ast.h"
 
-#define LOOP_END_KEYWORD "endloop"
+#define LOOP_END_KEYWORD "endl"
 #define IF_END_KEYWORD "endif"
 #define FUNC_END_KEYWORD "endf"
 

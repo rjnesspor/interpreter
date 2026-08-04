@@ -237,9 +237,10 @@ ASTNode* parseLeave() {
     expect(TOK_KEYWORD, "leave");
 
     ASTNode* node = createNode(AST_LEAVE);
-    ASTNode* returnVal = parseAtom();
-    node->right = returnVal;
-    
+    if (currentToken()->type != TOK_EOL) {
+        node->right = parseAtom();
+    }
+
     return node;
 }
 

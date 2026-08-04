@@ -7,7 +7,7 @@ define func pow with (integer base, integer exponent)
     ? 'loop' will execute a block as many times as 'exponent'
     loop exponent
         redefine res as res * base
-    endloop
+    endl
 
     leave res
 endf

@@ -1,0 +1,38 @@
+? This program plays the popular word game FizzBuzz.
+? If the number is a multiple of 3, say Fizz
+? If the number is a multiple of 5, say Buzz
+? If the number is a multiple of both, say FizzBuzz
+? If the number is none of these, say the number
+
+define func fizzBuzz with (integer count)
+    define integer i as 1
+    loop count
+        define integer modThree as i % 3
+        define integer modFive as i % 5
+
+        if modThree = 0 
+        if modFive = 0
+            print "FizzBuzz"
+        endif 
+        endif
+
+        if modThree = 0
+            print "Fizz"
+        endif
+
+        if modFive = 0
+            print "Buzz"
+        endif
+
+        if modThree != 0
+        if modFive != 0
+            print i
+        endif
+        endif
+
+        redefine i as i + 1
+    endl
+endf
+
+define integer count as 16
+call fizzBuzz with (count)
